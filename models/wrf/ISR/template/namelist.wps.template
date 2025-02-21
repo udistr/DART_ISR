@@ -1,0 +1,37 @@
+&share
+ wrf_core = 'ARW',
+ max_dom = 1,
+ start_date = '2020-01-10_18:00:00','2020-01-10_18:00:00','2020-01-10_18:00:00'
+ end_date =   '2020-01-11_00:00:00','2020-01-11_00:00:00','2020-01-11_00:00:00'
+ interval_seconds = 3600
+/
+
+&geogrid
+ parent_id         =   1,   1,
+ parent_grid_ratio =   1,   5,
+ i_parent_start    =   1,  261,
+ j_parent_start    =   1,  181,
+ e_we              =  640, 601,
+ e_sn              =  460, 601,
+ geog_data_res = 'default','default',
+ dx = 0.05,
+ dy = 0.05,
+ map_proj = 'lat-lon',
+ ref_lat   =  31.50,
+ ref_lon   =  35.00,
+!truelat1  =  30.0,
+!truelat2  =  60.0,
+ stand_lon =  0.0,
+ geog_data_path = '/shared/WPS_GEOG/'
+/
+&ungrib
+ out_format = 'WPS',
+ prefix = 'FILE',
+/
+
+&metgrid
+ fg_name = 'FILE',
+! 'SFC','PLEV'
+ io_form_metgrid = 2,
+/
+
