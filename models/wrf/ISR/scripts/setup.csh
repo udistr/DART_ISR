@@ -77,7 +77,8 @@ if ( ! -e ${RUN_DIR}/WRF_RUN/da_wrfvar.exe ) then
    exit 6
 endif 
 
-${COPY} ${VAR_SRC_DIR}/var/run/be.dat.cv3 ${RUN_DIR}/WRF_RUN/be.dat
+#${COPY} ${VAR_SRC_DIR}/var/run/be.dat.cv3 ${RUN_DIR}/WRF_RUN/be.dat
+${COPY} /shared/WRFDA/gen_be/gen_be5_cv7_d01/be.dat ${RUN_DIR}/WRF_RUN/be.dat
 if ( ! -e ${RUN_DIR}/WRF_RUN/be.dat ) then
    echo "ERROR: ${VAR_SRC_DIR}/var/run/be.dat.cv3 not found; cannot be copied to ${RUN_DIR}/WRF_RUN/"
    echo "ERROR: Check WRFDA build."
@@ -89,7 +90,7 @@ ${COPY} ${SHELL_SCRIPTS_DIR}/add_bank_perts.py    ${RUN_DIR} || exit 8
 ${COPY} ${SHELL_SCRIPTS_DIR}/new_advance_model.csh ${RUN_DIR} || exit 9
 
 # Edit input.nml.template so that its ens_size is set to the same value as $NUM_ENS in param.csh
-sed "s/ens_size.*/ens_size                 =  $NUM_ENS,/g" ${DART_DIR}/models/wrf/ISR/scripts/input.nml.template > ${RUN_DIR}/input.nml || exit 8
+sed "s/ens_size.*/ens_size                 =  $NUM_ENS,/g" ${DART_DIR}/models/wrf/ISR/template/input.nml.template > ${RUN_DIR}/input.nml || exit 8
 
 echo "$myname complete at "`date`
 echo 
