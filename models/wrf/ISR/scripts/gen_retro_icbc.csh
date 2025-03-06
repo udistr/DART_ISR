@@ -43,7 +43,7 @@ echo "gen_retro_icbc.csh is running in `pwd`"
 if ( $#argv > 0 ) then
   set datea   = ${1} # starting date
   set datefnl   = ${2}
-  set paramfile   = ${3}
+  set paramfile   = `readlink -f ${3}`
 else
   set datea     = 2017042700
   set datefnl   = 2017042706 # set this appropriately #%%%#
@@ -65,7 +65,7 @@ while ( 1 == 1 )
 
    cd ${ICBC_DIR}
    ${LINK} ${RUN_DIR}/input.nml input.nml
-   ${REMOVE} gfs*pgrb2* *grib2
+   #${REMOVE} gfs*pgrb2* *grib2
 
    #  prepare to run WPS ungrib and metgrid
    set start_date = `echo $datea 0 -w | ${DART_DIR}/models/wrf/work/advance_time`
@@ -98,7 +98,7 @@ EOF
    ${REMOVE}                    output.ungrib.exe.${GRIB_SRC}
    ${WPS_SRC_DIR}/ungrib.exe >& output.ungrib.exe.${GRIB_SRC}
 
-   cp ${TEMPLATE_DIR}/geo_em.d01.nc .
+   cp /shared/WRF4.4/WPS/geo_em.d01.nc .
 
    ${REMOVE}                     output.metgrid.exe
    ${WPS_SRC_DIR}/metgrid.exe >& output.metgrid.exe
@@ -174,8 +174,8 @@ EOF
      #${REMOVE} out.real.exe
      #${RUN_DIR}/WRF_RUN/real.serial.exe >& out.real.exe
      #if ( -e rsl.out.0000 )  cat rsl.out.0000 >> out.real.exe
-
-      rm script.sed real_done rsl.*
+     # real_done
+      rm script.sed rsl.*
       @ cpus_per_task = ${FILTER_PROCS} / ${FILTER_MPI}
       echo "2i\"                                                                          >! script.sed
       echo "#=================================================================\"          >> script.sed
@@ -194,12 +194,12 @@ EOF
       echo 's%${1}%'"${paramfile}%g"                                                      >> script.sed
       sed -f script.sed ${SHELL_SCRIPTS_DIR}/real.csh  >! real.csh
 
-      sbatch real.csh
+      sbatch  --wait real.csh && echo "Finished real"
 
       # need to look for sometihng to know when this job is done
-      while ( ! -e ${ICBC_DIR}/real_done )
-          sleep 15
-      end
+      # while ( ! -e ${ICBC_DIR}/real_done )
+      #     sleep 15
+      # end
 
       cat rsl.out.0000 >> out.real.exe
 

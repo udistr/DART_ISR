@@ -9,7 +9,7 @@
 
 #if ( `grep "Successful completion of program real.exe" ./rsl.out.0000 | wc -l ` == 1  )  touch ${ICBC_DIR}/real_done
 
- touch ${ICBC_DIR}/real_done
+ # touch ${ICBC_DIR}/real_done
 
 exit 0
 

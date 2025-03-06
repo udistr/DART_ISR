@@ -13,28 +13,20 @@
 # 	list of perturbed variables
 # 	wrfda executable and be.dat
 
-if ( $#argv > 0 ) then
-  set datea   = ${1} # need to start from a known valid date matching the wrfinput_d01 date
-  set paramfile   = ${2}
-else
-  set datea     = 2017042700
-  set paramfile = /shared/DART/ISR/scripts/param.csh   # set this appropriately #%%%#
-endif
-
-source $paramfile
+set datea = 2017042700  # need to start from a known valid date matching the wrfinput_d01 date
 
 # this has all wrf and wrfda executables and support files
-set wrfda_dir = ${BASE_DIR}/WRF_RUN # set this appropriately #%%%#
+set wrfda_dir = /shared/DART/ISR/rundir/WRF_RUN # set this appropriately #%%%#
 
-set work_dir  = ${BASE_DIR}/perts # set this appropriately #%%%#
+set work_dir  = /shared/DART/ISR/perts # set this appropriately #%%%#
 
 # put the final eperturbation files here for later use
-set save_dir  = ${BASE_DIR}/perts # set this appropriately #%%%#
+set save_dir  = /shared/DART/ISR/perts # set this appropriately #%%%#
 
-#set DART_DIR = /shared/DART/DART # set this appropriately #%%%#
+set DART_DIR = /shared/DART/DART # set this appropriately #%%%#
 
 # where the template namelist is for wrfvar
-set template_dir =  ${TEMPLATE_DIR}     # set this appropriately #%%%#
+set template_dir =  /shared/DART/ISR/template     # set this appropriately #%%%#
 set IC_PERT_SCALE      = 0.009
 set IC_HORIZ_SCALE     = 0.8
 set IC_VERT_SCALE      = 0.8

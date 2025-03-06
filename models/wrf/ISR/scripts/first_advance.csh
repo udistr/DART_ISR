@@ -6,7 +6,7 @@
 
 set datea     = ${1}
 set emember   = ${2}
-set paramfile = ${3}
+set paramfile   = `readlink -f ${3}`
 
 source $paramfile
 

@@ -18,28 +18,30 @@
 ########################################################################
 #   run as: nohup csh driver.csh 2017042706 param.csh >& run.log &
 ########################################################################
-# Set the correct values here
-set paramfile = `readlink -f ${3}` # Get absolute path for param.csh from command line arg
-set datefnl   =  ${2} # target date   YYYYMMDDHH  # set this appropriately #%%%#
 ########################################################################
 # Likely do not need to change anything below
 ########################################################################
-
-source $paramfile
-
-echo `uname -a`
-cd ${RUN_DIR}
 
 #  First determine the appropriate analysis date
 
 if ( $#argv > 0 ) then
   set datea   = ${1} # starting date
+  set datefnl   =  ${2} # target date   YYYYMMDDHH  # set this appropriately #%%%#
+  set paramfile = `readlink -f ${3}` # Get absolute path for param.csh from command line arg
   setenv restore 1   # set the restore variable
   echo 'starting a restore'
 else
   echo "please enter a date: yyyymmddhh"
   exit
+  set datea     = 2020010806
+  set datefnl   = 2020010812
+  set paramfile = /shared/DART/ISR/scripts/param.csh
 endif
+
+source $paramfile
+
+echo `uname -a`
+cd ${RUN_DIR}
 
 touch $RUN_DIR/cycle_started_${datea}
 echo $datea
@@ -286,7 +288,7 @@ while ( 1 == 1 )
       echo 's%${2}%'"${paramfile}%g"                                                      >> script.sed
       sed -f script.sed ${SHELL_SCRIPTS_DIR}/assimilate.csh >! assimilate.csh
 
-      sbatch assimilate.csh
+      sbatch --wait assimilate.csh
 
       set this_filter_runtime = $FILTER_TIME
 
@@ -647,8 +649,8 @@ while ( 1 == 1 )
          set datea  = `echo $datea $ASSIM_INT_HOURS | ${DART_DIR}/models/wrf/work/advance_time`
          set dateb  = `echo $datea $ASSIM_INT_HOURS | ${DART_DIR}/models/wrf/work/advance_time`
          echo "get initial conditions"
-         ${SHELL_SCRIPTS_DIR}/gen_retro_icbc.csh ${datea} ${dateb}
-         ${SHELL_SCRIPTS_DIR}/get_obs.csh ${datea}
+         ${SHELL_SCRIPTS_DIR}/gen_retro_icbc.csh ${datea} ${dateb} ${paramfile}
+         ${SHELL_SCRIPTS_DIR}/get_obs.csh ${datea} ${paramfile}
       else
       	 echo "Script exiting normally cycle ${datea}"
          exit 0

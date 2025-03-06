@@ -43,8 +43,7 @@ while [[ "$d" < "$enddate" ]]; do
     python GetERA5-${DATE1}${HOUR1}-sl.py
     rm GetERA5-${DATE1}${HOUR1}-sl.py
   else
-    echo "File exists. Copy file"
-    cp ${FILE} .
+    echo "File exists"
   fi
   
   FILE="ERA5-${DATE1}${HOUR1}-pl.grib"
@@ -55,8 +54,7 @@ while [[ "$d" < "$enddate" ]]; do
     python GetERA5-${DATE1}${HOUR1}-pl.py
     rm GetERA5-${DATE1}${HOUR1}-pl.py
   else
-    echo "File exists. Copy file"
-    cp ${FILE} .
+    echo "File exists"
   fi
 
   d=`date -u -d "${d} +7 hour + 6 hour"  +'%Y%m%dT%H'`

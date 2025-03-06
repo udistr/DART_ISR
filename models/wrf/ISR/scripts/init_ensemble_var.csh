@@ -54,7 +54,7 @@ set hh     = `echo $initial_date | cut -b9-10`
 ${COPY} ${TEMPLATE_DIR}/namelist.input.meso namelist.input
 ${REMOVE} ${RUN_DIR}/WRF
 ${LINK} ${OUTPUT_DIR}/${initial_date} WRF
-
+set job_ids = ()
 set n = 1
 while ( $n <= $NUM_ENS )
 
@@ -118,11 +118,44 @@ EOF
 
 EOF
 
-   sbatch ${RUN_DIR}/rt_assim_init_${n}.csh
-
+   set id = `sbatch --parsable ${RUN_DIR}/rt_assim_init_${n}.csh`
+   set job_ids = ($job_ids $id)
    @ n++
 
 end
+
+# Wait for all jobs to complete using squeue
+while (1)
+    set still_running = 0
+    
+    foreach id ($job_ids)
+        # Check if the job is still in the queue
+        set job_exists = `squeue -j $id -h | wc -l`
+        if ($job_exists > 0) then
+            set still_running = 1
+            #echo "Job $id is still running..."
+        endif
+    end
+    
+    if ($still_running == 0) then
+        echo "All jobs have completed!"
+        break
+    endif
+    
+    echo "Waiting for jobs to complete... sleeping for 30 seconds"
+    sleep 30
+end
+
+cd $BASE_DIR/rundir
+
+set gdate = (`echo $initial_date 0 -g | ${DART_DIR}/models/wrf/work/advance_time`)
+
+cp ../output/${initial_date}/wrfinput_d01_${gdate[1]}_${gdate[2]}_mean ./wrfinput_d01
+./fill_inflation_restart
+mkdir ../output/${initial_date}/Inflation_input
+mv input_priorinf_*.nc ../output/${initial_date}/Inflation_input/
+
+
 
 exit 0
 
