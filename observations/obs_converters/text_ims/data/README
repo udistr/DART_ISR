@@ -1,0 +1,92 @@
+# DART text_to_obs Program
+# this file was generated with AI tool so take care
+# The fortran code served as input to the file
+
+## Overview
+
+The `text_to_obs.f90` program is a utility for converting text-based observation data into DART's observation sequence file format (`obs_seq.out`). This program is part of the Data Assimilation Research Testbed (DART) framework developed by UCAR.
+
+This specific implementation is designed to read IMS (Integrated Multisatellite Retrievals) observation data from a text file and convert it to DART's native observation format. The program handles various observation types commonly found in meteorological applications.
+
+## Supported Observation Types
+
+The program currently supports the following observation types:
+
+- Temperature at 2m (type 40: `TEMPERATURE_2M`)
+- U-component of wind at 10m (type 41: `U_WIND_10M`)
+- V-component of wind at 10m (type 42: `V_WIND_10M`)
+- Surface pressure (type 43: `SURFACE_PRESSURE`)
+- Land surface relative humidity (type 83: `LAND_SFC_RELATIVE_HUMIDITY`)
+
+## Input File Format
+
+The input text file should have space-separated values with each line containing an observation. The expected format for each line is:
+
+```
+<obs_type> <lat> <lon> <vert> <year> <month> <day> <hour> <minute> <second> <value> <error>
+```
+
+Where:
+- `obs_type`: Integer code for the observation type (40, 41, 42, 43, or 83)
+- `lat`: Latitude in degrees (-90 to 90)
+- `lon`: Longitude in degrees (0 to 360)
+- `vert`: Vertical coordinate value (surface observations use 0, or the heigt above sea level)
+- `year`, `month`, `day`, `hour`, `minute`, `second`: Time of observation
+- `value`: The actual observation value
+- `error`: Observation error (standard deviation)
+
+## Configuration
+
+The program uses a namelist file (`input.nml`) to specify runtime options. The relevant namelist section is `text_to_obs_nml` with the following parameters:
+
+```fortran
+&text_to_obs_nml
+   text_input_file = '../data/text_input_file'  ! Path to input text file
+   obs_out_file    = 'obs_seq.out'             ! Path for output file
+   debug           = .false.                    ! Enable debug printing
+/
+```
+
+## Usage
+
+1. Prepare your IMS observation data in the required text format
+2. Modify the `input.nml` file to specify your input and output files
+3. Compile the program (if needed) using the DART build system
+4. Run the program:
+   ```bash
+   ./text_to_obs
+   ```
+5. The program will create a DART observation sequence file named according to your `obs_out_file` setting (default: `obs_seq.out`)
+
+## Example
+
+For a temperature observation at latitude 40.5, longitude 255.0, at the surface (0.0), taken on 2023-01-15 at 12:30:00 UTC, with a value of 278.2 Kelvin and an error of 1.5:
+
+```
+40 40.5 255.0 0.0 2023 1 15 12 30 0 278.2 1.5
+```
+
+## Notes
+
+- The program assumes the GREGORIAN calendar type
+- Longitudes must be in the range 0-360 degrees
+- For surface pressure observations, the input is assumed to be in hPa/mb (the program will convert to Pa if needed)
+- Quality control values are set to 0.0 (good data) by default
+- The program is set up to handle a maximum of 100,000 observations, but this can be modified in the source code if needed
+
+## Error Handling
+
+- The program will skip observations with invalid latitude or longitude values
+- Unsupported observation types will be reported and skipped
+- The program will terminate processing when it reaches the end of the input file or encounters an unrecoverable read error
+
+## History
+
+- Created: March 29, 2010 by Nancy Collins (NCAR/IMAGe)
+- Updated: February 8, 2016 - Minor changes to wind conversion and updated comments
+- Updated: August 29, 2019 - Added namelist with example values
+
+## Further Information
+
+For more details on DART and its observation formats, please refer to the DART documentation available at:
+http://www.image.ucar.edu/DAReS/DART/
