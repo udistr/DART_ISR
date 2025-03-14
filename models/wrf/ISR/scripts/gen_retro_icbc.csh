@@ -62,6 +62,7 @@ while ( 1 == 1 )
    echo "Entering gen_retro_icbc.csh for $datea"
 
    if ( ! -d ${OUTPUT_DIR}/${datea} )  mkdir -p ${OUTPUT_DIR}/${datea}
+   mkdir -p ${OUTPUT_DIR}/${datea}/logs
 
    cd ${ICBC_DIR}
    ${LINK} ${RUN_DIR}/input.nml input.nml
@@ -96,11 +97,13 @@ EOF
    ${LINK} ${WPS_SRC_DIR}/ungrib/Variable_Tables/Vtable.${GRIB_SRC} Vtable
 
    ${REMOVE}                    output.ungrib.exe.${GRIB_SRC}
+   echo "runing ungrip"
    ${WPS_SRC_DIR}/ungrib.exe >& output.ungrib.exe.${GRIB_SRC}
 
    cp /shared/WRF4.4/WPS/geo_em.d01.nc .
 
    ${REMOVE}                     output.metgrid.exe
+   echo "runing metgrid"
    ${WPS_SRC_DIR}/metgrid.exe >& output.metgrid.exe
 
    #${LINK} ${WPS_SRC_DIR}/met_em.d01.* .
@@ -175,7 +178,10 @@ EOF
      #${RUN_DIR}/WRF_RUN/real.serial.exe >& out.real.exe
      #if ( -e rsl.out.0000 )  cat rsl.out.0000 >> out.real.exe
      # real_done
-      rm script.sed rsl.*
+      rm script.sed 
+      if ( -f rsl.* ) then
+        rm rsl.*
+      endif
       @ cpus_per_task = ${FILTER_PROCS} / ${FILTER_MPI}
       echo "2i\"                                                                          >! script.sed
       echo "#=================================================================\"          >> script.sed
@@ -183,8 +189,8 @@ EOF
       echo "#SBATCH --get-user-env\"                                                      >> script.sed
       echo "#SBATCH --export=ALL\"                                                        >> script.sed
       echo "#SBATCH -J assimilate_${datea}\"                                              >> script.sed
-      echo "#SBATCH --output=run.sh.%j.out\"                                              >> script.sed
-      echo "#SBATCH --error=run.sh.%j.err\"                                               >> script.sed
+      echo "#SBATCH --output=output.real.%j.out\"                                              >> script.sed
+      echo "#SBATCH --error=output.real.%j.err\"                                               >> script.sed
       echo "#SBATCH --nodes=${FILTER_NODES}\"                                             >> script.sed
       echo "#SBATCH --ntasks-per-node=${FILTER_MPI}\"                                     >> script.sed
       echo "#SBATCH --cpus-per-task=${cpus_per_task}\"                                    >> script.sed
@@ -201,7 +207,7 @@ EOF
       #     sleep 15
       # end
 
-      cat rsl.out.0000 >> out.real.exe
+      cat rsl.out.0000 >> output.real_${n}.exe
 
       #  move output files to storage
       set gdate = (`echo $date1 0 -g | ${DART_DIR}/models/wrf/work/advance_time`)
@@ -212,6 +218,8 @@ EOF
 
    end
 
+   # moving log files
+   ${MOVE} metgrid.log ungrib.log output* ${OUTPUT_DIR}/${datea}/logs/
    set datea  = `echo $datea $ASSIM_INT_HOURS | ${DART_DIR}/models/wrf/work/advance_time`
    # move to next time, or exit if final time is reached
    if ( $datea == $datefnl) then

@@ -42,8 +42,9 @@ use  obs_sequence_mod, only : obs_sequence_type, obs_type, read_obs_seq, &
                               set_copy_meta_data, set_qc_meta_data
 
 ! Change these to the actual types of observations you have.
-use      obs_kind_mod, only : SURFACE_PRESSURE, TEMPERATURE_2M, &
-                           U_WIND_10M, V_WIND_10M, LAND_SFC_RELATIVE_HUMIDITY
+use      obs_kind_mod, only : EVAL_U_WIND_COMPONENT, EVAL_V_WIND_COMPONENT, &
+                              EVAL_TEMPERATURE
+
 implicit none
 
 ! variables that can be changed at runtime from a namelist
@@ -64,9 +65,8 @@ integer :: num_copies, num_qc, max_obs
            
 logical  :: file_exist, first_obs
 
-real(r8) :: temp, terr, qc, wdir, wspeed, werr,perr,rherr
+real(r8) :: temp, terr, qc, wdir, wspeed, werr
 real(r8) :: lat, lon, vert, uwnd, uerr, vwnd, verr
-real(r8) :: pres, rh, wind
 
 type(obs_sequence_type) :: obs_seq
 type(obs_type)          :: obs, prev_obs
@@ -174,48 +174,24 @@ obsloop: do    ! no end limit - have the loop break when input ends
    ! and if otype=2, a wind speed and direction in degrees (0-360)
    ! measured at a location and a vertical pressure.
 
-
-   ! For observation types: 40 (TEMPERATURE_2M), 41 (U_WIND_10M), 
-   ! 42 (V_WIND_10M), 43 (SURFACE_PRESSURE)§, 83 (LAND_SFC_RELATIVE_HUMIDITY)
-   if (otype == 40) then         ! TEMPERATURE_2M
+   if (otype == 1) then
       read(input_line(3:129), *, iostat=rcio) lat, lon, vert, &
-                                year, month, day, hour, minute, second, &
-                                temp, terr
-      call create_3d_obs(lat, lon, vert, VERTISHEIGHT, temp, &
-                         otype, terr, oday, osec, qc, obs)
-      call add_obs_to_seq(obs_seq, obs, time_obs, prev_obs, prev_time, first_obs)
-
-   elseif (otype == 41 .or. otype == 42) then  ! U_WIND_10M or V_WIND_10M
-      read(input_line(3:129), *, iostat=rcio) lat, lon, vert, &
-                                year, month, day, hour, minute, second, &
-                                wind, werr
-      call create_3d_obs(lat, lon, vert, VERTISHEIGHT, wind, &
-                        otype, werr, oday, osec, qc, obs)
-      call add_obs_to_seq(obs_seq, obs, time_obs, prev_obs, prev_time, first_obs)
-
-   elseif (otype == 43) then     ! SURFACE_PRESSURE
-      read(input_line(3:129), *, iostat=rcio) lat, lon, vert, &
-                                year, month, day, hour, minute, second, &
-                                pres, perr
-      ! Convert pressure to pascals if needed
-      pres = pres                ! if input is in hPa/mb
-      call create_3d_obs(lat, lon, vert, VERTISHEIGHT, pres, &
-                        otype, perr, oday, osec, qc, obs)
-      call add_obs_to_seq(obs_seq, obs, time_obs, prev_obs, prev_time, first_obs)
-
-   elseif (otype == 83) then     ! LAND_SFC_RELATIVE_HUMIDITY
-      read(input_line(3:129), *, iostat=rcio) lat, lon, vert, &
-                                year, month, day, hour, minute, second, &
-                                rh, rherr
-      call create_3d_obs(lat, lon, vert, VERTISHEIGHT, rh, &
-                        otype, rherr, oday, osec, qc, obs)
-      call add_obs_to_seq(obs_seq, obs, time_obs, prev_obs, prev_time, first_obs)
-
+                                 year, month, day, hour, minute, second, &
+                                 temp, terr
+      if (rcio /= 0) then 
+         if (debug) print *, 'got bad read code getting rest of temp obs, rcio = ', rcio
+         exit obsloop
+      endif
    else
-      print *, 'Unsupported observation type: ', otype
-      cycle obsloop
+      read(input_line(3:129), *, iostat=rcio) lat, lon, vert, &
+                                  year, month, day, hour, minute, second, &
+                                  wspeed, wdir, werr
+      if (rcio /= 0) then 
+         if (debug) print *, 'got bad read code getting rest of wind obs, rcio = ', rcio
+         exit obsloop
+      endif
    endif
-
+   
    if (debug) print *, 'next observation located at lat, lon = ', lat, lon
 
    ! check the lat/lon values to see if they are ok.  we require
@@ -238,6 +214,52 @@ obsloop: do    ! no end limit - have the loop break when input ends
 
    ! extract time of observation into gregorian day, sec.
    call get_time(time_obs, osec, oday)
+
+   ! this example assumes there is an obs type, where otype=1 is
+   ! a temperature measured in height, and if otype=2, a wind speed
+   ! and direction with a vertical value in pressure.  any observation
+   ! can use any of the vertical types; this is just an example.
+
+   if (otype == 1) then
+
+      ! height is in meters (gph)
+
+      ! make an obs derived type, and then add it to the sequence
+      call create_3d_obs(lat, lon, vert, VERTISHEIGHT, temp, &
+                         EVAL_TEMPERATURE, terr, oday, osec, qc, obs)
+      call add_obs_to_seq(obs_seq, obs, time_obs, prev_obs, prev_time, first_obs)
+
+      if (debug) print *, 'added temperature obs to output seq'
+   else
+
+      ! DART assimilates wind as 2 separate U and V components.  assimilating
+      ! "direction and speed" is difficult because direction is measured in 
+      ! cyclic coordinates so you can't do simple statistics to get a mean value.
+
+      ! convert a wind speed & direction into the U and V components
+      ! and create 2 obs for it.  assume vert is in mb or hectopascals,
+      ! convert to pascals.  DART assumes all pressures are in pascals.
+      ! check your data source; usually wind direction is specified as the 
+      ! direction the wind is coming from, increasing degrees going in a 
+      ! clockwise circle.  U and V wind components have the opposite sign.
+      uwnd = sin(wdir * DEG2RAD) * wspeed * (-1.0_r8)
+      vwnd = cos(wdir * DEG2RAD) * wspeed * (-1.0_r8)
+      uerr = werr
+      verr = werr
+
+      ! convert hectopascals to pascals.
+      vert = vert * 100.0_r8
+
+      call create_3d_obs(lat, lon, vert, VERTISPRESSURE, uwnd, &
+                         EVAL_U_WIND_COMPONENT, uerr, oday, osec, qc, obs)
+      call add_obs_to_seq(obs_seq, obs, time_obs, prev_obs, prev_time, first_obs)
+   
+      call create_3d_obs(lat, lon, vert, VERTISPRESSURE, vwnd, &
+                         EVAL_V_WIND_COMPONENT, verr, oday, osec, qc, obs)
+      call add_obs_to_seq(obs_seq, obs, time_obs, prev_obs, prev_time, first_obs)
+
+      if (debug) print *, 'added 2 wind obs to output seq'
+    endif
 
 end do obsloop
 

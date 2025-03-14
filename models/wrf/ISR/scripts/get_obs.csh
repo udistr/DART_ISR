@@ -74,11 +74,32 @@ else
   end
   conda deactivate
   cat data_ims/ims* > obs_seq_ims.txt
-  # A patch to overcome wrong date in first obs
+  # A patch to overcome the wrong date in the first obs
   (head -1 obs_seq_ims.txt; cat obs_seq_ims.txt) > temp_file
   mv temp_file data_ims/obs_seq_ims.txt
 
-  ${DART_DIR}/observations/obs_converters/text/work/text_to_obs
+  set max_tries = 20
+  set tries = 0
+  set finished = 0
+
+  while ($tries < $max_tries && $finished == 0)
+      ./text_to_obs > log.text_to_obs
+      @ tries = ${tries} + 1
+      
+      set finished_count = `grep Finished log.text_to_obs | wc -l`
+      if ($finished_count == 1) then
+          set finished = 1
+          echo "Success: Found 'Finished' in log file after $tries attempt(s)"
+      else
+          echo "Attempt ${tries}: 'Finished' not found yet"
+          if ($tries < $max_tries) then
+              echo "Trying again..."
+          else
+              echo "Maximum number of attempts (${max_tries}) reached without finding 'Finished'"
+              exit 1
+          endif
+      endif
+  end
 
   ${DART_DIR}/models/wrf/work/obs_sequence_tool
   mv obs_seq.out ${OUTPUT_DIR}/${DATE}/

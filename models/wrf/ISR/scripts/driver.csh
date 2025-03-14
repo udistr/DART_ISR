@@ -40,7 +40,6 @@ endif
 
 source $paramfile
 
-echo `uname -a`
 cd ${RUN_DIR}
 
 touch $RUN_DIR/cycle_started_${datea}
@@ -62,13 +61,35 @@ while ( 1 == 1 )
    echo 'ready to check inputs'
    set domains = $NUM_DOMAINS   # from the param file
    #  Check to make sure all input data exists
-   if  ( $domains == 1 ) then
+   if ( $domains == 1 ) then
+      set all_files_exist = 1  # Flag to track if all files exist
+     
+      # First check if all required files already exist
       foreach infile ( wrfinput_d01_${gdate[1]}_${gdate[2]}_mean \
                       wrfinput_d01_${gdatef[1]}_${gdatef[2]}_mean \
-                        wrfbdy_d01_${gdatef[1]}_${gdatef[2]}_mean obs_seq.out )
-
+                      wrfbdy_d01_${gdatef[1]}_${gdatef[2]}_mean obs_seq.out )
+         
          if ( ! -e ${OUTPUT_DIR}/${datea}/${infile} ) then
-            echo  "${OUTPUT_DIR}/${datea}/${infile} is missing!  Stopping the system"
+            set all_files_exist = 0  # At least one file is missing
+         endif
+      end
+      
+      # If any files are missing and retro.tar exists, try to extract them
+      if ( $all_files_exist == 0 && -e ${OUTPUT_DIR}/${datea}/retro.tar ) then
+         echo "Some files are missing, extracting from retro.tar..."
+         cd ${OUTPUT_DIR}/${datea}
+         tar --overwrite -xvf retro.tar && gunzip -f *.gz
+         cd -  # Return to previous directory
+      endif
+      
+      # Final check to ensure all files are available after potential extraction
+      foreach infile ( wrfinput_d01_${gdate[1]}_${gdate[2]}_mean \
+                      wrfinput_d01_${gdatef[1]}_${gdatef[2]}_mean \
+                      wrfbdy_d01_${gdatef[1]}_${gdatef[2]}_mean obs_seq.out )
+         
+         # Check if the file exists (either originally or after extraction)
+         if ( ! -e ${OUTPUT_DIR}/${datea}/${infile} ) then
+            echo "${OUTPUT_DIR}/${datea}/${infile} is missing! Stopping the system"
             touch ABORT_RETRO
             exit 2
          endif
@@ -278,8 +299,8 @@ while ( 1 == 1 )
       echo "#SBATCH --export=ALL\"                                                        >> script.sed
       echo "#SBATCH -J assimilate_${datea}\"                                              >> script.sed
       echo "#SBATCH --time=${FILTER_TIME}\"                                               >> script.sed
-      echo "#SBATCH --output=run.sh.%j.out\"                                              >> script.sed
-      echo "#SBATCH --error=run.sh.%j.err\"                                               >> script.sed
+      echo "#SBATCH --output=assimilate_${datea}.out\"                                              >> script.sed
+      echo "#SBATCH --error=assimilate_${datea}.err\"                                               >> script.sed
       echo "#SBATCH --nodes=${FILTER_NODES}\"                                             >> script.sed
       echo "#SBATCH --ntasks-per-node=${FILTER_MPI}\"                                     >> script.sed
       echo "#SBATCH --cpus-per-task=${cpus_per_task}\"                                    >> script.sed
@@ -325,7 +346,7 @@ while ( 1 == 1 )
 
    echo "filter is done, cleaning up"
 
-   ${MOVE}  run.sh.\* ${OUTPUT_DIR}/${datea}/logs/
+   ${MOVE}  run.sh.* ${OUTPUT_DIR}/${datea}/logs/
    ${REMOVE} ${RUN_DIR}/filter_started  \
              ${RUN_DIR}/filter_done  \
              ${RUN_DIR}/obs_seq.out     \
@@ -333,8 +354,9 @@ while ( 1 == 1 )
              ${RUN_DIR}/preassim_priorinf*
    if ( -e assimilate.csh )  ${REMOVE} ${RUN_DIR}/assimilate.csh
 
-   echo "Listing contents of rundir before archiving at "`date`
-   ls -l *.nc blown* dart_log* filter_* input.nml obs_seq* Output/inf_ic*
+   #echo "Listing contents of rundir before archiving at "`date`
+   #ls -l *.nc blown* dart_log* filter_* input.nml obs_seq* Output/inf_ic*
+   echo "Archiving contents of rundir at "`date`
    mkdir -p ${OUTPUT_DIR}/${datea}/{Inflation_input,WRFIN,PRIORS,logs}
 
    set num_vars = $#increment_vars_a
@@ -464,9 +486,9 @@ while ( 1 == 1 )
          echo "#SBATCH --partition=compute\"                                                 >> script.sed
          echo "#SBATCH --get-user-env\"                                                      >> script.sed
          echo "#SBATCH --export=ALL\"                                                        >> script.sed
-         echo "#SBATCH -J assim_advance_${n}\"                                              >> script.sed
-         echo "#SBATCH --output=run.sh.%j.out\"                                              >> script.sed
-         echo "#SBATCH --error=run.sh.%j.err\"                                               >> script.sed
+         echo "#SBATCH -J assim_advance_${n}\"                                               >> script.sed
+         echo "#SBATCH --output=assim_advance_${n}.out\"                                     >> script.sed
+         echo "#SBATCH --error=assim_advance_${n}.err\"                                      >> script.sed
          echo "#SBATCH --nodes=${FILTER_NODES}\"                                             >> script.sed
          echo "#SBATCH --ntasks-per-node=${FILTER_MPI}\"                                     >> script.sed
          echo "#SBATCH --cpus-per-task=${cpus_per_task}\"                                    >> script.sed
@@ -551,7 +573,7 @@ while ( 1 == 1 )
 
             set current_time = `date +%s`
             @ length_time = $current_time - $start_time
-
+            #echo `expr $advance_thresh - $length_time`
             if ( -e ${RUN_DIR}/done_member_${n} ) then
 
       	       #  If the output file already exists, move on
@@ -648,8 +670,9 @@ while ( 1 == 1 )
          endif
          set datea  = `echo $datea $ASSIM_INT_HOURS | ${DART_DIR}/models/wrf/work/advance_time`
          set dateb  = `echo $datea $ASSIM_INT_HOURS | ${DART_DIR}/models/wrf/work/advance_time`
-         echo "get initial conditions"
+         echo "get initial conditions for ${datea} - ${dateb}"
          ${SHELL_SCRIPTS_DIR}/gen_retro_icbc.csh ${datea} ${dateb} ${paramfile}
+         echo "get observations for ${datea}"
          ${SHELL_SCRIPTS_DIR}/get_obs.csh ${datea} ${paramfile}
       else
       	 echo "Script exiting normally cycle ${datea}"

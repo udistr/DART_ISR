@@ -78,6 +78,8 @@ while ( $n <= $NUM_ENS )
 EOF
    echo $cmd3 >! ${RUN_DIR}/advance_temp${n}/nclrun3.out.tim   # TJH replace cat above
 
+   @ cpus_per_task = ${FILTER_PROCS} / ${FILTER_MPI}
+
    cat >! ${RUN_DIR}/rt_assim_init_${n}.csh << EOF
 #!/bin/csh
 #=================================================================
@@ -85,11 +87,11 @@ EOF
 #SBATCH --get-user-env
 #SBATCH --export=ALL
 #SBATCH -J first_advance_${n}
-#SBATCH --output=run.sh."%j".out
-#SBATCH --error=run.sh."%j".err
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=48
-#SBATCH --cpus-per-task=1
+#SBATCH --output=wrf.init."%j".out
+#SBATCH --error=wrf.init."%j".err
+#SBATCH --nodes=${FILTER_NODES}
+#SBATCH --ntasks-per-node=${FILTER_MPI}
+#SBATCH --cpus-per-task=${cpus_per_task}
 #=================================================================
 
    echo "rt_assim_init_${n}.csh is running in `pwd`"
@@ -146,16 +148,16 @@ while (1)
     sleep 30
 end
 
+mv wrf.init.* ${OUTPUT_DIR}/${initial_date}/logs/
+
 cd $BASE_DIR/rundir
 
 set gdate = (`echo $initial_date 0 -g | ${DART_DIR}/models/wrf/work/advance_time`)
 
 cp ../output/${initial_date}/wrfinput_d01_${gdate[1]}_${gdate[2]}_mean ./wrfinput_d01
 ./fill_inflation_restart
-mkdir ../output/${initial_date}/Inflation_input
-mv input_priorinf_*.nc ../output/${initial_date}/Inflation_input/
-
-
+mkdir -p ${OUTPUT_DIR}/${initial_date}/Inflation_input
+mv input_priorinf_*.nc ${OUTPUT_DIR}/${initial_date}/Inflation_input/
 
 exit 0
 

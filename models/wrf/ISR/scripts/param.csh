@@ -47,17 +47,18 @@ set GRIB_DATA_DIR     = ${ICBC_DIR}/grib_data                     # set this app
 set GRIB_SRC          = 'ERA-interim.pl'                                     # set this appropriately #%%%#
 
 # list of variables for extraction and cycling
-set extract_vars_a   = ( U V PH THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
+set extract_vars_a   = ( U V P PB PH PHB THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
                          U10 V10 T2 Q2 PSFC TSLB SMOIS TSK RAINC RAINNC GRAUPELNC )
-set extract_vars_b   = ( U V W PH THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
+set extract_vars_b   = ( U V W P PB PH PHB THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
                          U10 V10 T2 Q2 PSFC TSLB SMOIS TSK RAINC RAINNC GRAUPELNC \
                          REFL_10CM VT_DBZ_WT )
-set cycle_vars_a     =   ( U V PH THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
+set cycle_vars_a     =   ( U V P PB PH PHB THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
                            U10 V10 T2 Q2 PSFC TSLB SMOIS TSK )
-set increment_vars_a = ( U V PH THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP U10 V10 T2 Q2 PSFC )
+set increment_vars_a = ( U V P PB PH PHB THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
+                         U10 V10 T2 Q2 PSFC TSLB SMOIS TSK RAINC RAINNC)
 
 #  Diagnostic parameters
-set OBS_VERIF_DAYS      = 7
+set OBS_VERIF_DAYS      = 1
 
 #  Generic queuing system parameters
 set SUPER_PLATFORM          = aws
@@ -84,7 +85,7 @@ else if ( $SUPER_PLATFORM == 'aws' ) then
    set FILTER_MPI         = 48
    set FILTER_PROCS       = 48
    set FILTER_TIME        = 0:35:00
-   set ADVANCE_TIME        = 0:18
+   set ADVANCE_TIME        = 0:50
 else
    # 'LSF' queueing system example
    # Set these appropriately for your LSF or Slurm system #%%%# 

@@ -91,6 +91,19 @@ ${COPY} ${SHELL_SCRIPTS_DIR}/new_advance_model.csh ${RUN_DIR} || exit 9
 # Edit input.nml.template so that its ens_size is set to the same value as $NUM_ENS in param.csh
 sed "s/ens_size.*/ens_size                 =  $NUM_ENS,/g" ${DART_DIR}/models/wrf/tutorial/template/input.nml.template > ${RUN_DIR}/input.nml || exit 8
 
+# Put DART converters in proper place
+foreach exe ( advance_time convert_madis_acars convert_madis_marine convert_madis_mesonet \
+              convert_madis_metar convert_madis_profiler convert_madis_rawin \
+              convert_madis_satwnd obs_sequence_tool)
+    ${COPY} ${DART_DIR}/observations/obs_converters/MADIS/work/$exe ${OBSPROC_DIR}/$exe
+    if ( ! -e ${OBSPROC_DIR}/$exe ) then
+       echo "ERROR: ${DART_DIR}/models/wrf/work/$exe not copied to ${OBSPROC_DIR}"
+       echo "ERROR: Check DART build."
+       exit 3
+    endif
+end
+${COPY} ${DART_DIR}/observations/obs_converters/text_ims/work/text_to_obs ${OBSPROC_DIR}
+
 echo "$myname complete at "`date`
 echo 
 

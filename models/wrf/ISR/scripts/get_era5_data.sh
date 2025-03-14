@@ -16,5 +16,5 @@ echo "Downloading ERA5 data"
 echo "bash Download_WRF_snap.sh ${DD1} ${HH1} ${DD2} ${HH2} &> downlad.log"
 bash Download_WRF_snap.sh ${DD1} ${HH1} ${DD2} ${HH2} &> downlad.log
 if [ $? -ne 0 ]; then echo "Command failed with exit code $?. Exiting.";  exit 1; fi
-
+echo "Finished downloading ERA5 data"
 

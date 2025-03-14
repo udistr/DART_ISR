@@ -24,10 +24,10 @@ cd ${RUN_DIR}
 set s_asim = (`echo $datea -${ass_min}m -g | ${DART_DIR}/models/wrf/work/advance_time`)
 set e_asim = (`echo $datea  ${ass_min}m -g | ${DART_DIR}/models/wrf/work/advance_time`)
 
-sed -i "/first_obs_days/c\   first_obs_days           = ${s_asim[1]}," input.nml
-sed -i "/first_obs_seconds/c\   first_obs_seconds           = ${s_asim[2]}," input.nml
+sed -i "/first_obs_days/c\   first_obs_days          = ${s_asim[1]}," input.nml
+sed -i "/first_obs_seconds/c\   first_obs_seconds       = ${s_asim[2]}," input.nml
 sed -i "/last_obs_days/c\   last_obs_days           = ${e_asim[1]}," input.nml
-sed -i "/last_obs_seconds/c\   last_obs_seconds           = ${e_asim[2]}," input.nml
+sed -i "/last_obs_seconds/c\   last_obs_seconds        = ${e_asim[2]}," input.nml
 
 echo $start_time >& ${RUN_DIR}/filter_started
 
