@@ -14,7 +14,7 @@
 #module load ncl/6.6.2    # set this appropriately #%%%#
 
 #  Set the assimilation parameters
-set NUM_ENS            = 20
+set NUM_ENS            = 30
 set ASSIM_INT_MINUTES  = 0   # 0 means use ASSIM_INT_HOURS
 set ASSIM_INT_HOURS    = 6   # ignored if ASSIM_INT_MINUTES > 0
 set IC_PERT_SCALE      = 0.25
@@ -22,7 +22,7 @@ set ADAPTIVE_INFLATION = 1   # set to 1 if using adaptive inflation to tell the 
 set NUM_DOMAINS        = 1
 
 #  Directories where things are run
-#  IMPORTANT : Scripts provided rely on this directory structure and names relative to BASE_DIR.
+#  IMPORTANT: Scripts provided rely on this directory structure and names relative to BASE_DIR.
 #              Do not change, otherwise tutorial will fail.    
 set BASE_DIR         = /shared/DART/ISR     # set this appropriately #%%%#
 set RUN_DIR          = ${BASE_DIR}/rundir
@@ -47,15 +47,18 @@ set GRIB_DATA_DIR     = ${ICBC_DIR}/grib_data                     # set this app
 set GRIB_SRC          = 'ERA-interim.pl'                                     # set this appropriately #%%%#
 
 # list of variables for extraction and cycling
+# select variables to wrfinput d01
 set extract_vars_a   = ( U V P PB PH PHB THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
                          U10 V10 T2 Q2 PSFC TSLB SMOIS TSK RAINC RAINNC GRAUPELNC )
+# select variables to wrfinput d02 and above
 set extract_vars_b   = ( U V W P PB PH PHB THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
                          U10 V10 T2 Q2 PSFC TSLB SMOIS TSK RAINC RAINNC GRAUPELNC \
                          REFL_10CM VT_DBZ_WT )
+# select variables from wrfinput
 set cycle_vars_a     =   ( U V P PB PH PHB THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
-                           U10 V10 T2 Q2 PSFC TSLB SMOIS TSK )
-set increment_vars_a = ( U V P PB PH PHB THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
-                         U10 V10 T2 Q2 PSFC TSLB SMOIS TSK RAINC RAINNC)
+                         U10 V10 T2 Q2 PSFC TSLB SMOIS TSK RAINC RAINNC GRAUPELNC )
+# select assimilated variables
+set increment_vars_a = ( U V PH THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP U10 V10 T2 Q2 PSFC )
 
 #  Diagnostic parameters
 set OBS_VERIF_DAYS      = 1
@@ -82,10 +85,13 @@ if ( $SUPER_PLATFORM == 'derecho' ) then
    set ADVANCE_MPI        = 128
 else if ( $SUPER_PLATFORM == 'aws' ) then
    set FILTER_NODES       = 1
-   set FILTER_MPI         = 48
-   set FILTER_PROCS       = 48
+   set FILTER_MPI         = 32
+   set FILTER_PROCS       = 32
+   set FILTER_NODES_F     = 2
+   set FILTER_MPI_F       = 96
+   set FILTER_PROCS_F     = 96
    set FILTER_TIME        = 0:35:00
-   set ADVANCE_TIME        = 0:50
+   set ADVANCE_TIME       = 1:00
 else
    # 'LSF' queueing system example
    # Set these appropriately for your LSF or Slurm system #%%%# 

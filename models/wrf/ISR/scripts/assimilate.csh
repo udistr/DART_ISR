@@ -53,12 +53,14 @@ else if ( $SUPER_PLATFORM == 'derecho' ) then
 else if ( $SUPER_PLATFORM == 'aws' ) then
 
    setenv MPI_SHEPHERD FALSE
-   #ncatted -a TRUELAT1,global,m,f,0.0 wrfinput_d01
+   # to remove warnings in filter, we are using lat-lon so there is no TRUELAT1
+   # but it is searched by filter. Therefore it is added manually
+   /shared/miniconda3/envs/gcc_env/bin/ncatted -a TRUELAT1,global,m,f,0.0 wrfinput_d01
 
    setenv TMPDIR  /dev/shm
    limit stacksize unlimited
-   @ total_cpus = ${FILTER_NODES} * ${FILTER_PROCS}
-   mpiexec -n ${total_cpus} --map-by ppr:${total_cpus}:node ./filter || exit 1
+   @ total_cpus = ${FILTER_NODES_F} * ${FILTER_PROCS_F}
+   mpiexec -n ${total_cpus} --map-by ppr:${FILTER_PROCS_F}:node ./filter || exit 1
 
 endif
 

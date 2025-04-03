@@ -99,7 +99,7 @@ while ( $n <= $num_ens )
 /seed_array1/c\seed_array1 = ${datea},
 /seed_array2/c\seed_array2 = $seed_array2,
 EOF
-   sed -f script.sed ${template_dir}/namelist.input.3dvar >! ${work_dir}/mem_${n}/namelist.input
+   sed -f script.sed ${template_dir}/namelist.input.3dvar_gen_pert_bank >! ${work_dir}/mem_${n}/namelist.input
    # make a run file for wrfvar
 
    cat >> ${work_dir}/mem_${n}/gen_pert_${n}.csh << EOF

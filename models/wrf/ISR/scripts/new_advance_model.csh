@@ -83,7 +83,7 @@ source $paramfile
 
 # Setting to vals > 0 saves wrfout files,
 # will save all member output files <= to this value
-set save_ensemble_member = ${NUM_ENS}
+set save_ensemble_member = 0 #${NUM_ENS}
 set delete_temp_dir = False
 
 # set this to true if you want to maintain complete individual wrfinput/output
@@ -180,7 +180,11 @@ sleep 5
 # This control file has the actual ensemble number, the input filename,
 # and the output filename for each advance.  Be prepared to loop and
 # do the rest of the script more than once.
-set USE_WRFVAR = 1
+
+# choose whether to run WRFDA perturbations or static perturbations from the bank
+set USE_WRFVAR = 0
+# choose which script to use to update bdy files: pert_wrf_bc or update_wrf_bc
+set USE_PERTS_WRF_BC = 1
 set state_copy = 1
 set ensemble_member_line = 1
 set input_file_line = 2    # MUTIPLE DOMAINS - this doesn't work for multiple domains, need something more general, maybe just a header name
@@ -357,8 +361,8 @@ EOF
     echo $bdyfiles
     set keylist = ()
     foreach f ( $bdyfiles )
-  set day = `echo $f | awk -F_ '{print $(NF-2)}'`
-  set sec = `echo $f | awk -F_ '{print $(NF-1)}'`
+       set day = `echo $f | awk -F_ '{print $(NF-2)}'`
+       set sec = `echo $f | awk -F_ '{print $(NF-1)}'`
        set key = `echo "$day * 86400 + $sec" | bc`
        set keylist = ( $keylist $key )
     end
@@ -471,6 +475,9 @@ EOF
     # WARNING: da_wrfvar.exe will only work correctly if running WRF V3.1 or later!
     # If it is found in the central dir, use it to regenerate perturbed boundary files
     # Otherwise, do the original call to update_wrf_bc
+
+    ${LN} ${CENTRALDIR}/WRF/wrfinput_d01_${targdays}_${targsecs}_mean ./fg
+
     if ( $USE_WRFVAR ) then
 
       #  Set the covariance perturbation scales using file or default values
@@ -532,35 +539,37 @@ EOF
 EOF
 # The EOF on the line above MUST REMAIN in column 1.
 
-      sed -f script.sed ${CENTRALDIR}/namelist.input >! namelist.input
+      sed -f script.sed ${TEMPLATE_DIR}/namelist.input.3dvar >! namelist.input
       
-      ${LN} ${CENTRALDIR}/WRF/wrfinput_d01_${targdays}_${targsecs}_mean ./fg
-################################
-## instead of running wrfda, just add static pertubations from the pert bank
-#  note the static perturbation path is defined in the ncl script
-#         setenv TARGET_CPU_RANGE        "-1"	
-#         mpiexec_mpt dplace -s 1  ${CENTRALDIR}/WRF_RUN/da_wrfvar.exe >>&! out.wrfvar
-      cp fg wrfvar_output
-      #cp ${CENTRALDIR}/add_bank_perts.ncl .
-      cp ${RUN_DIR}/add_bank_perts.py .
-      #set cmd3 = "ncl 'MEM_NUM=${ensemble_member}' 'PERTS_DIR="\""${PERTS_DIR}"\""' ${CENTRALDIR}/advance_temp${ensemble_member}/add_bank_perts.ncl"
-      set cmd3 = "/shared/miniconda3/envs/xmitgcm/bin/python ${RUN_DIR}/advance_temp${ensemble_member}/add_bank_perts.py ${ensemble_member} '${PERTS_DIR}'"
-      ${REMOVE} nclrun3.out
-      cat >! nclrun3.out << EOF
-      $cmd3
-EOF
-      chmod +x nclrun3.out
-      ./nclrun3.out >& add_perts.out
-      if ( -z add_perts.err ) then
-        echo "Perts added to member ${ensemble_member}"
-      else
-         echo "Error! Non-zero status returned from add_bank_perts.py. Check ${RUN_DIR}/advance_temp${ensemble_member}/add_perts.err."
-         cat add_perts.err
-         exit
-      endif
-################################
-      cp namelist.input namelist.input.3dvar
+      # this will output new pertubed state wrfvar_output
+      mpirun -np 12 ${CENTRALDIR}/WRF_RUN/da_wrfvar.exe >>&! out.wrfvar
       if ( -e rsl.out.0000 ) cat rsl.out.0000 >> out.wrfvar
+      cp namelist.input namelist.input.3dvar
+
+    else
+        ################################
+        ## instead of running wrfda, just add static perturbations from the pert bank
+        #  note the static perturbation path is defined in the ncl script
+        #         setenv TARGET_CPU_RANGE        "-1"	
+        cp fg wrfvar_output
+        cp ${RUN_DIR}/add_bank_perts.py .
+        set cmd3 = "/shared/miniconda3/envs/xmitgcm/bin/python ${RUN_DIR}/advance_temp${ensemble_member}/add_bank_perts.py ${ensemble_member} '${PERTS_DIR}'"
+        ${REMOVE} nclrun3.out
+        cat >! nclrun3.out << EOF
+        $cmd3
+EOF
+        chmod +x nclrun3.out
+        ./nclrun3.out >& add_perts.out
+        if ( -z add_perts.err ) then
+          echo "Perts added to member ${ensemble_member}"
+        else
+          echo "Error! Non-zero status returned from add_bank_perts.py. Check ${RUN_DIR}/advance_temp${ensemble_member}/add_perts.err."
+          cat add_perts.err
+        endif
+        ################################
+    endif
+
+    if ( $USE_PERTS_WRF_BC ) then
 
       ${MOVE} wrfvar_output wrfinput_next
       ${LN} wrfinput_d01 wrfinput_this
@@ -571,14 +580,15 @@ EOF
         ${MOVE} wrfinput_mean   wrfinput_this_mean
         ${MOVE} fg              wrfinput_next_mean
       endif
-      
-      ${CENTRALDIR}/pert_wrf_bc >&! out.pert_wrf_bc
+
+      # generate a new perturbed wrfbdy_d01 file
+      ${DART_DIR}/models/wrf/work/pert_wrf_bc >&! out.pert_wrf_bc
       ${REMOVE} wrfinput_this wrfinput_next wrfbdy_this
       if ( -e wrfinput_this_mean ) ${REMOVE} wrfinput_this_mean wrfinput_next_mean
 
     else  # Update boundary conditions from existing wrfbdy files
     
-       echo $infl | ${CENTRALDIR}/update_wrf_bc >&! out.update_wrf_bc
+       echo $infl | ${DART_DIR}/models/wrf/work/update_wrf_bc >&! out.update_wrf_bc
     
     endif
 
@@ -743,7 +753,7 @@ EOF
 # forecast date
     set dn = 1
     while ( $dn <= $num_domains )
-       if ( $ensemble_member <= $save_ensemble_member ) ${COPY} wrfout_d0${dn}_${END_STRING} ${WRFOUTDIR}/wrfout_d0${dn}_${END_STRING}_${ensemble_member}
+      if ( $ensemble_member <= $save_ensemble_member ) ${COPY} wrfout_d0${dn}_${END_STRING} ${WRFOUTDIR}/wrfout_d0${dn}_${END_STRING}_${ensemble_member}
 # if the wrfinput file zip operation is finished, wrfinput_d0${dn}_$ensemble_member should no 
 # longer be in the directory
         # test for this, and wait if the zip operation is not yet finished
@@ -756,6 +766,7 @@ EOF
         @ dn ++
       end
 
+      cp wrfprcp_d* ${OUTPUT_DIR}/${datea}/
       ${REMOVE} wrfout*
 
       set START_YEAR  = $END_YEAR
@@ -810,7 +821,7 @@ EOF
   set i = 1
   while ( $i < $num_vars )
      set extract_str_b = `echo ${extract_str_b}$extract_vars_b[$i],`
-     @ i ++
+     @ i ++/
   end
   set extract_str_b = `echo ${extract_str_b}$extract_vars_b[$num_vars]`
   echo ${extract_str_b}

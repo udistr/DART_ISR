@@ -209,7 +209,7 @@ while ( 1 == 1 )
          if ( -e ${OUTPUT_DIR}/${datep}/Inflation_input/input_priorinf_mean.nc ) then
 
             ${LINK} ${OUTPUT_DIR}/${datep}/Inflation_input/input_priorinf*.nc ${RUN_DIR}/.
-            ${LINK} ${OUTPUT_DIR}/${datep}/Inflation_input/input_postinf*.nc ${RUN_DIR}/.
+            #${LINK} ${OUTPUT_DIR}/${datep}/Inflation_input/input_postinf*.nc ${RUN_DIR}/.
 
          else
 
@@ -291,7 +291,7 @@ while ( 1 == 1 )
       set this_filter_runtime = $FILTER_TIME
 
    else if ( $SUPER_PLATFORM == 'aws' ) then
-      @ cpus_per_task = ${FILTER_PROCS} / ${FILTER_MPI}
+      @ cpus_per_task = ${FILTER_PROCS_F} / ${FILTER_MPI_F}
       echo "2i\"                                                                          >! script.sed
       echo "#=================================================================\"          >> script.sed
       echo "#SBATCH --partition=compute\"                                                 >> script.sed
@@ -299,10 +299,10 @@ while ( 1 == 1 )
       echo "#SBATCH --export=ALL\"                                                        >> script.sed
       echo "#SBATCH -J assimilate_${datea}\"                                              >> script.sed
       echo "#SBATCH --time=${FILTER_TIME}\"                                               >> script.sed
-      echo "#SBATCH --output=assimilate_${datea}.out\"                                              >> script.sed
-      echo "#SBATCH --error=assimilate_${datea}.err\"                                               >> script.sed
-      echo "#SBATCH --nodes=${FILTER_NODES}\"                                             >> script.sed
-      echo "#SBATCH --ntasks-per-node=${FILTER_MPI}\"                                     >> script.sed
+      echo "#SBATCH --output=assimilate_${datea}.out\"                                    >> script.sed
+      echo "#SBATCH --error=assimilate_${datea}.err\"                                     >> script.sed
+      echo "#SBATCH --nodes=${FILTER_NODES_F}\"                                           >> script.sed
+      echo "#SBATCH --ntasks-per-node=${FILTER_MPI_F}\"                                   >> script.sed
       echo "#SBATCH --cpus-per-task=${cpus_per_task}\"                                    >> script.sed
       echo "#================================================================="           >> script.sed
       echo 's%${1}%'"${datea}%g"                                                          >> script.sed
@@ -346,7 +346,7 @@ while ( 1 == 1 )
 
    echo "filter is done, cleaning up"
 
-   ${MOVE}  run.sh.* ${OUTPUT_DIR}/${datea}/logs/
+   ${MOVE}  assimilate_* ${OUTPUT_DIR}/${datea}/logs/
    ${REMOVE} ${RUN_DIR}/filter_started  \
              ${RUN_DIR}/filter_done  \
              ${RUN_DIR}/obs_seq.out     \
@@ -599,7 +599,11 @@ while ( 1 == 1 )
                   qsub assim_advance_mem${n}.csh
                   sleep 5
                else if ( $SUPER_PLATFORM == 'aws' ) then
-
+                  # if the job is stuck kill it and resubmit
+                  if ( `squeue -n assim_advance_${n} | wc -l` == 2 ) then
+                    set jobid = `squeue -n assim_advance_{n} | grep assim_ad | awk '{print $1}'`
+                    scancel ${jobid}
+                  endif
                   sbatch assim_advance_mem${n}.csh
                   sleep 5
                endif
@@ -615,7 +619,7 @@ while ( 1 == 1 )
 
       #  Move output data to correct location
       echo "moving ${n} ${ensstring}"
-      ${MOVE} ${RUN_DIR}/assim_advance_${n}.o*              ${OUTPUT_DIR}/${datea}/logs/.
+      ${MOVE} ${RUN_DIR}/assim_advance_${n}.*              ${OUTPUT_DIR}/${datea}/logs/.
       ${MOVE} WRFOUT/wrf.out_${gdatef[1]}_${gdatef[2]}_${n} ${OUTPUT_DIR}/${datea}/logs/.
       ${MOVE} WRFIN/wrfinput_d01_${n}.gz                    ${OUTPUT_DIR}/${datea}/WRFIN/.
       ${MOVE} ${RUN_DIR}/prior_d01.${ensstring}             ${OUTPUT_DIR}/${datea}/PRIORS/.
@@ -634,51 +638,55 @@ while ( 1 == 1 )
 
    if ( -e obs_prep.log ) ${REMOVE} obs_prep.log
 
-      #  Clean everything up and finish
-
-      #  Move DART-specific data to storage directory
-      ${COPY} input.nml ${OUTPUT_DIR}/${datea}/.
-      ${MOVE} ${RUN_DIR}/dart_log.out ${RUN_DIR}/dart_log.nml ${RUN_DIR}/*.log ${OUTPUT_DIR}/${datea}/logs/.
-
-      #  Remove temporary files from both the run directory and old storage directories
-      ${REMOVE} ${OUTPUT_DIR}/${datep}/wrfinput_d*_mean ${RUN_DIR}/wrfinput_d* ${RUN_DIR}/WRF
-
-      #  Prep data for archive
-      cd ${OUTPUT_DIR}/${datea}
-      gzip -f wrfinput_d*_${gdate[1]}_${gdate[2]}_mean wrfinput_d*_${gdatef[1]}_${gdatef[2]}_mean wrfbdy_d*_mean
-      tar -cvf retro.tar obs_seq.out wrfin*.gz wrfbdy_d*.gz
-      tar -rvf dart_data.tar obs_seq.out obs_seq.final wrfinput_d*.gz wrfbdy_d*.gz \
-                            Inflation_input/* logs/* *.dat input.nml
-      ${REMOVE} wrfinput_d*_${gdate[1]}_${gdate[2]}_mean.gz wrfbdy_d*.gz
-      gunzip -f wrfinput_d*_${gdatef[1]}_${gdatef[2]}_mean.gz
-
-      cd $RUN_DIR
-      ${MOVE} ${RUN_DIR}/assim*.o*            ${OUTPUT_DIR}/${datea}/logs/.
-      ${MOVE} ${RUN_DIR}/*log                 ${OUTPUT_DIR}/${datea}/logs/.
-      ${REMOVE} ${RUN_DIR}/input_priorinf_*
-      ${REMOVE} ${RUN_DIR}/static_data*
-      touch prev_cycle_done
-      touch $RUN_DIR/cycle_finished_${datea}
-      rm $RUN_DIR/cycle_started_${datea}
-
-      # If doing a reanalysis, increment the time if not done.  Otherwise, let the script exit
-      if ( $restore == 1 ) then
-         if ( $datea == $datefnl) then
-            echo "Reached the final date "
-	          echo "Script exiting normally"
-            exit 0
-         endif
-         set datea  = `echo $datea $ASSIM_INT_HOURS | ${DART_DIR}/models/wrf/work/advance_time`
-         set dateb  = `echo $datea $ASSIM_INT_HOURS | ${DART_DIR}/models/wrf/work/advance_time`
-         echo "get initial conditions for ${datea} - ${dateb}"
-         ${SHELL_SCRIPTS_DIR}/gen_retro_icbc.csh ${datea} ${dateb} ${paramfile}
-         echo "get observations for ${datea}"
-         ${SHELL_SCRIPTS_DIR}/get_obs.csh ${datea} ${paramfile}
-      else
-      	 echo "Script exiting normally cycle ${datea}"
-         exit 0
-      endif
-   end
+   #  Clean everything up and finish
+  
+   #  Move DART-specific data to storage directory
+   ${COPY} input.nml ${OUTPUT_DIR}/${datea}/.
+   ${MOVE} ${RUN_DIR}/dart_log.out ${RUN_DIR}/dart_log.nml ${RUN_DIR}/*.log ${OUTPUT_DIR}/${datea}/logs/.
+  
+   #  Remove temporary files from both the run directory and old storage directories
+   ${REMOVE} ${OUTPUT_DIR}/${datep}/wrfinput_d*_mean ${RUN_DIR}/wrfinput_d* ${RUN_DIR}/WRF
+  
+   #  Prep data for archive
+   cd ${OUTPUT_DIR}/${datea}
+   gzip -f wrfinput_d*_${gdate[1]}_${gdate[2]}_mean wrfinput_d*_${gdatef[1]}_${gdatef[2]}_mean wrfbdy_d*_mean
+   tar -cvf retro.tar obs_seq.out wrfin*.gz wrfbdy_d*.gz
+   tar -rf dart_data.tar obs_seq.out obs_seq.final wrfinput_d*.gz wrfbdy_d*.gz \
+                          Inflation_input/* logs/* input.nml 
+   ${REMOVE} wrfinput_d*_${gdate[1]}_${gdate[2]}_mean.gz wrfbdy_d*.gz
+   gunzip -f wrfinput_d*_${gdatef[1]}_${gdatef[2]}_mean.gz
+  
+   cd $RUN_DIR
+   ${MOVE} ${RUN_DIR}/assim*.o*            ${OUTPUT_DIR}/${datea}/logs/.
+   ${MOVE} ${RUN_DIR}/*log                 ${OUTPUT_DIR}/${datea}/logs/.
+   ${REMOVE} ${RUN_DIR}/input_priorinf_*
+   ${REMOVE} ${RUN_DIR}/static_data*
+   touch prev_cycle_done
+   touch $RUN_DIR/cycle_finished_${datea}
+   rm $RUN_DIR/cycle_started_${datea}
+  
+   # If doing a reanalysis, increment the time if not done.  Otherwise, let the script exit
+   if ( $restore == 1 ) then
+     if ( $datea == $datefnl) then
+       echo "Reached the final date "
+       echo "Script exiting normally"
+       exit 0
+     endif
+       set datea  = `echo $datea $ASSIM_INT_HOURS | ${DART_DIR}/models/wrf/work/advance_time`
+       set dateb  = `echo $datea $ASSIM_INT_HOURS | ${DART_DIR}/models/wrf/work/advance_time`
+       echo "get initial conditions for ${datea} - ${dateb}"
+       ${SHELL_SCRIPTS_DIR}/gen_retro_icbc.csh ${datea} ${dateb} ${paramfile}
+       echo "get observations for ${datea}"
+       ${SHELL_SCRIPTS_DIR}/get_obs.csh ${datea} ${paramfile}
+    else
+       echo "  "
+       echo "====================================================================="
+       echo "driver.csh exiting normally cycle ${datea}"
+       echo "====================================================================="
+       echo "  "
+       exit 0
+    endif
+  end
 
 exit 0
 

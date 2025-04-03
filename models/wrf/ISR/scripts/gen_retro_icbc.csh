@@ -188,9 +188,9 @@ EOF
       echo "#SBATCH --partition=compute\"                                                 >> script.sed
       echo "#SBATCH --get-user-env\"                                                      >> script.sed
       echo "#SBATCH --export=ALL\"                                                        >> script.sed
-      echo "#SBATCH -J assimilate_${datea}\"                                              >> script.sed
-      echo "#SBATCH --output=output.real.%j.out\"                                              >> script.sed
-      echo "#SBATCH --error=output.real.%j.err\"                                               >> script.sed
+      echo "#SBATCH -J output.real_${datea}\"                                             >> script.sed
+      echo "#SBATCH --output=output.real.%j.out\"                                         >> script.sed
+      echo "#SBATCH --error=output.real.%j.err\"                                          >> script.sed
       echo "#SBATCH --nodes=${FILTER_NODES}\"                                             >> script.sed
       echo "#SBATCH --ntasks-per-node=${FILTER_MPI}\"                                     >> script.sed
       echo "#SBATCH --cpus-per-task=${cpus_per_task}\"                                    >> script.sed

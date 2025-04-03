@@ -155,6 +155,7 @@ cd $BASE_DIR/rundir
 set gdate = (`echo $initial_date 0 -g | ${DART_DIR}/models/wrf/work/advance_time`)
 
 cp ../output/${initial_date}/wrfinput_d01_${gdate[1]}_${gdate[2]}_mean ./wrfinput_d01
+/shared/miniconda3/envs/gcc_env/bin/ncatted -a TRUELAT1,global,m,f,0.0 wrfinput_d01
 ./fill_inflation_restart
 mkdir -p ${OUTPUT_DIR}/${initial_date}/Inflation_input
 mv input_priorinf_*.nc ${OUTPUT_DIR}/${initial_date}/Inflation_input/
