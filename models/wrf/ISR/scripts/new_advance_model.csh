@@ -182,9 +182,13 @@ sleep 5
 # do the rest of the script more than once.
 
 # choose whether to run WRFDA perturbations or static perturbations from the bank
-set USE_WRFVAR = 0
+######################################################################################################
+set USE_WRFVAR_PERT = 0
+set USE_BANK_PERT = 1
 # choose which script to use to update bdy files: pert_wrf_bc or update_wrf_bc
-set USE_PERTS_WRF_BC = 1
+set USE_PERTS_WRF_BC = 0
+set USE_UPDATE_WRF_BC = 0
+######################################################################################################
 set state_copy = 1
 set ensemble_member_line = 1
 set input_file_line = 2    # MUTIPLE DOMAINS - this doesn't work for multiple domains, need something more general, maybe just a header name
@@ -352,13 +356,9 @@ EOF
   set SPEC_BC = `grep specified ${CENTRALDIR}/namelist.input | grep true | wc -l`
 
   if ( $SPEC_BC > 0 ) then
-  
-    if ( $USE_WRFVAR ) then
-       set bdyfiles = `ls ${CENTRALDIR}/WRF/wrfbdy_d01_*_mean`
-    else
-       set bdyfiles = `ls ${CENTRALDIR}/WRF/wrfbdy_d01_*_${ensemble_member} | grep -v mean`
-    endif
+    set bdyfiles = `ls ${CENTRALDIR}/WRF/wrfbdy_d01_*_mean`
     echo $bdyfiles
+
     set keylist = ()
     foreach f ( $bdyfiles )
        set day = `echo $f | awk -F_ '{print $(NF-2)}'`
@@ -445,11 +445,7 @@ EOF
     # Copy the boundary condition file to the temp directory if needed.
     if ( $SPEC_BC > 0 ) then
     
-       if ( $USE_WRFVAR ) then
-          ${COPY} ${CENTRALDIR}/WRF/wrfbdy_d01_${iday}_${isec}_mean               wrfbdy_d01
-       else
-          ${COPY} ${CENTRALDIR}/WRF/wrfbdy_d01_${iday}_${isec}_${ensemble_member} wrfbdy_d01
-       endif
+      ${COPY} ${CENTRALDIR}/WRF/wrfbdy_d01_${iday}_${isec}_mean wrfbdy_d01
     
     endif
     
@@ -478,7 +474,7 @@ EOF
 
     ${LN} ${CENTRALDIR}/WRF/wrfinput_d01_${targdays}_${targsecs}_mean ./fg
 
-    if ( $USE_WRFVAR ) then
+    if ( $USE_WRFVAR_PERT ) then
 
       #  Set the covariance perturbation scales using file or default values
       if ( -e ${CENTRALDIR}/bc_pert_scale ) then
@@ -488,7 +484,7 @@ EOF
       else
         set pscale = 0.25
         set hscale = 1.0
-        set vscale = 1.5
+        set vscale = 1.0
       endif
       @ iseed2 = $ensemble_member * 10
       
@@ -545,8 +541,9 @@ EOF
       mpirun -np 12 ${CENTRALDIR}/WRF_RUN/da_wrfvar.exe >>&! out.wrfvar
       if ( -e rsl.out.0000 ) cat rsl.out.0000 >> out.wrfvar
       cp namelist.input namelist.input.3dvar
+    endif
 
-    else
+    if ( $USE_BANK_PERT ) then
         ################################
         ## instead of running wrfda, just add static perturbations from the pert bank
         #  note the static perturbation path is defined in the ncl script
@@ -571,10 +568,10 @@ EOF
 
     if ( $USE_PERTS_WRF_BC ) then
 
-      ${MOVE} wrfvar_output wrfinput_next
-      ${LN} wrfinput_d01 wrfinput_this
-      ${LN} wrfbdy_d01 wrfbdy_this
-      
+      ${COPY} wrfvar_output wrfinput_next
+      ${COPY} wrfinput_d01 wrfinput_this
+      ${COPY} wrfbdy_d01 wrfbdy_this
+
       # if wrfinput_mean file found, rename it
       if ( -e wrfinput_mean ) then
         ${MOVE} wrfinput_mean   wrfinput_this_mean
@@ -583,12 +580,18 @@ EOF
 
       # generate a new perturbed wrfbdy_d01 file
       ${DART_DIR}/models/wrf/work/pert_wrf_bc >&! out.pert_wrf_bc
-      ${REMOVE} wrfinput_this wrfinput_next wrfbdy_this
+      ${COPY} wrfbdy_this wrfbdy_d01
+      ${COPY} wrfinput_this wrfinput_d01 
+
+      #echo $infl | ${DART_DIR}/models/wrf/work/update_wrf_bc >&! out.update_wrf_bc
+      #${REMOVE} wrfinput_this wrfinput_next wrfbdy_this
       if ( -e wrfinput_this_mean ) ${REMOVE} wrfinput_this_mean wrfinput_next_mean
 
-    else  # Update boundary conditions from existing wrfbdy files
-    
-       echo $infl | ${DART_DIR}/models/wrf/work/update_wrf_bc >&! out.update_wrf_bc
+    endif  
+
+   # Update boundary conditions from existing wrfbdy files
+    if ( $USE_UPDATE_WRF_BC ) then
+      echo $infl | ${DART_DIR}/models/wrf/work/update_wrf_bc >&! out.update_wrf_bc
     
     endif
 
@@ -705,8 +708,10 @@ EOF
     
     # clean out any old rsl files
     if ( -e rsl.out.integration )  ${REMOVE} rsl.*
-    
+
+    #------------------------------------------------------------
     # run WRF here
+    #------------------------------------------------------------
     setenv MPI_SHEPHERD FALSE
     ${ADV_MOD_COMMAND} >>&! rsl.out.integration
 
@@ -766,7 +771,7 @@ EOF
         @ dn ++
       end
 
-      cp wrfprcp_d* ${OUTPUT_DIR}/${datea}/
+      cp wrfprcp_d*_* ${OUTPUT_DIR}/${datea}/
       ${REMOVE} wrfout*
 
       set START_YEAR  = $END_YEAR
@@ -821,7 +826,7 @@ EOF
   set i = 1
   while ( $i < $num_vars )
      set extract_str_b = `echo ${extract_str_b}$extract_vars_b[$i],`
-     @ i ++/
+     @ i ++
   end
   set extract_str_b = `echo ${extract_str_b}$extract_vars_b[$num_vars]`
   echo ${extract_str_b}

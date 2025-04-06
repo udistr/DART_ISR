@@ -66,8 +66,8 @@ while ( $n <= $NUM_ENS )
    ${LINK} ${RUN_DIR}/input.nml ${RUN_DIR}/advance_temp${n}/input.nml
 
    ${COPY} ${OUTPUT_DIR}/${initial_date}/wrfinput_d01_${gdate[1]}_${gdate[2]}_mean \
-           ${RUN_DIR}/advance_temp${n}/wrfvar_output.nc
-   sleep 3
+           ${RUN_DIR}/advance_temp${n}/wrfvar_output
+   #sleep 3
    ${COPY} ${RUN_DIR}/add_bank_perts.py ${RUN_DIR}/advance_temp${n}/.
 
    set cmd3 = "/shared/miniconda3/envs/xmitgcm/bin/python ${RUN_DIR}/advance_temp${n}/add_bank_perts.py ${n} '${PERTS_DIR}'"
@@ -96,7 +96,7 @@ EOF
 
    echo "rt_assim_init_${n}.csh is running in `pwd`"
    cd ${RUN_DIR}/advance_temp${n}
-   if (-e wrfvar_output.nc) then
+   if (-e wrfvar_output) then
       echo "Running nclrun3.out to create wrfinput_d01 for member $n at `date`"
 
       chmod +x nclrun3.out
@@ -110,7 +110,7 @@ EOF
          exit
       endif
 
-      ${MOVE} wrfvar_output.nc wrfinput_d01
+      ${MOVE} wrfvar_output wrfinput_d01
    endif
 
    cd $RUN_DIR

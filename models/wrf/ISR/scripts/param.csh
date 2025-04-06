@@ -16,7 +16,7 @@
 #  Set the assimilation parameters
 set NUM_ENS            = 30
 set ASSIM_INT_MINUTES  = 0   # 0 means use ASSIM_INT_HOURS
-set ASSIM_INT_HOURS    = 6   # ignored if ASSIM_INT_MINUTES > 0
+set ASSIM_INT_HOURS    = 1   # ignored if ASSIM_INT_MINUTES > 0
 set IC_PERT_SCALE      = 0.25
 set ADAPTIVE_INFLATION = 1   # set to 1 if using adaptive inflation to tell the scripts to look for the files
 set NUM_DOMAINS        = 1
@@ -87,7 +87,7 @@ else if ( $SUPER_PLATFORM == 'aws' ) then
    set FILTER_NODES       = 1
    set FILTER_MPI         = 32
    set FILTER_PROCS       = 32
-   set FILTER_NODES_F     = 2
+   set FILTER_NODES_F     = 1
    set FILTER_MPI_F       = 96
    set FILTER_PROCS_F     = 96
    set FILTER_TIME        = 0:35:00

@@ -70,7 +70,7 @@ while ( 1 == 1 )
 
    #  prepare to run WPS ungrib and metgrid
    set start_date = `echo $datea 0 -w | ${DART_DIR}/models/wrf/work/advance_time`
-   set end_date   = `echo $datea 6 -w | ${DART_DIR}/models/wrf/work/advance_time`
+   set end_date   = `echo $datea ${ASSIM_INT_HOURS} -w | ${DART_DIR}/models/wrf/work/advance_time`
    echo $start_date
 
    ${REMOVE} script.sed
@@ -202,7 +202,7 @@ EOF
 
       sbatch  --wait real.csh && echo "Finished real"
 
-      # need to look for sometihng to know when this job is done
+      # need to look for something to know when this job is done
       # while ( ! -e ${ICBC_DIR}/real_done )
       #     sleep 15
       # end

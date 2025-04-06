@@ -27,37 +27,48 @@ echo $d
 echo $enddate
 
 echo "entering loop"
-
+#archive folder
+OLDDATA="/shared/WRF4.4/WRFDATA/old_data"
 while [[ "$d" < "$enddate" ]]; do
 
   DATE1=${d:0:8}
   HOUR1=${d:9:2}
 
   echo "get data for $DATE1 $HOUR1"
-
   FILE="ERA5-${DATE1}${HOUR1}-sl.grib"
 
   if [ ! -e "$FILE" ]; then
-    echo "File does not exist. Downloading file"
-    sed -e "s/DATE1/${DATE1}/g;s/HOUR1/${HOUR1}/g;s/Nort/${Nort}/g;s/West/${West}/g;s/Sout/${Sout}/g;s/East/${East}/g;" GetERA5-sl_snap.py > GetERA5-${DATE1}${HOUR1}-sl.py
-    python GetERA5-${DATE1}${HOUR1}-sl.py
-    rm GetERA5-${DATE1}${HOUR1}-sl.py
+    if [ -e "${OLDDATA}/$FILE" ]; then
+      echo "$FILE file exists in the archive"
+      cp ${OLDDATA}/${FILE} .
+    else
+      echo "$FILE does not exist. Downloading file"
+      sed -e "s/DATE1/${DATE1}/g;s/HOUR1/${HOUR1}/g;s/Nort/${Nort}/g;s/West/${West}/g;s/Sout/${Sout}/g;s/East/${East}/g;" GetERA5-sl_snap.py > GetERA5-${DATE1}${HOUR1}-sl.py
+      python GetERA5-${DATE1}${HOUR1}-sl.py
+      rm GetERA5-${DATE1}${HOUR1}-sl.py
+    fi
   else
-    echo "File exists"
+    echo "$FILE file exists"
   fi
   
   FILE="ERA5-${DATE1}${HOUR1}-pl.grib"
 
   if [ ! -e "$FILE" ]; then
-    echo "File does not exist. Downloading file"
-    sed -e "s/DATE1/${DATE1}/g;s/HOUR1/${HOUR1}/g;s/Nort/${Nort}/g;s/West/${West}/g;s/Sout/${Sout}/g;s/East/${East}/g;" GetERA5-pl_snap.py > GetERA5-${DATE1}${HOUR1}-pl.py
-    python GetERA5-${DATE1}${HOUR1}-pl.py
-    rm GetERA5-${DATE1}${HOUR1}-pl.py
+    if [ -e "${OLDDATA}/$FILE" ]; then
+      echo "$FILE file exists in the archive"
+      cp ${OLDDATA}/${FILE} .
+    else
+      echo "$FILE does not exist. Downloading file"
+      sed -e "s/DATE1/${DATE1}/g;s/HOUR1/${HOUR1}/g;s/Nort/${Nort}/g;s/West/${West}/g;s/Sout/${Sout}/g;s/East/${East}/g;" GetERA5-pl_snap.py > GetERA5-${DATE1}${HOUR1}-pl.py
+      python GetERA5-${DATE1}${HOUR1}-pl.py
+      rm GetERA5-${DATE1}${HOUR1}-pl.py
+    fi
   else
-    echo "File exists"
+    echo "$FILE file exists"
   fi
 
-  d=`date -u -d "${d} +7 hour + 6 hour"  +'%Y%m%dT%H'`
+  d=`date -u -d "${d} +7 hour + 1 hour"  +'%Y%m%dT%H'`
+  #d=`date -u -d "${d} +7 hour + 6 hour"  +'%Y%m%dT%H'`
 
 done  
 exit 0

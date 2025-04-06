@@ -44,4 +44,5 @@ endif
 ./driver.csh ${datea} ${datefnl} ${paramfile} 
 
 #nohup ./driver.csh ${datea} ${datefnl} ${paramfile}  > run_all_log.out 2>&1 &
+#nohup ./driver.csh ${datea} ${datefnl} ${paramfile} > & output.log &
 
