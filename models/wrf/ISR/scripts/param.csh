@@ -24,7 +24,7 @@ set NUM_DOMAINS        = 1
 #  Directories where things are run
 #  IMPORTANT: Scripts provided rely on this directory structure and names relative to BASE_DIR.
 #              Do not change, otherwise tutorial will fail.    
-set BASE_DIR         = /shared/DART/ISR     # set this appropriately #%%%#
+set BASE_DIR         = EXP_DIR     # set this appropriately #%%%#
 set RUN_DIR          = ${BASE_DIR}/rundir
 set TEMPLATE_DIR     = ${BASE_DIR}/template
 set OBSPROC_DIR      = ${BASE_DIR}/obsproc
