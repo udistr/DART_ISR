@@ -49,7 +49,7 @@ else
     #6 hours
     set DATE1_m2 = `date -d "${YY1}${MM1}${DD1} ${HH1} - 2 hours" "+%Y %-m %-d %-H"`
     set DATE1_p3 = `date -d "${YY1}${MM1}${DD1} ${HH1} + 3 hours" "+%Y %-m %-d %-H"`
-  elif ( ${ASSIM_INT_HOURS} == 1 ) then
+  else if ( ${ASSIM_INT_HOURS} == 1 ) then
     # 1 hour
     set DATE1_m2 = `date -d "${YY1}${MM1}${DD1} ${HH1}" "+%Y %-m %-d %-H"`
     set DATE1_p3 = `date -d "${YY1}${MM1}${DD1} ${HH1}" "+%Y %-m %-d %-H"`
@@ -65,11 +65,11 @@ else
   conda activate xmitgcm
   # Get start and end times
 
-  if ( ${ASSIM_INT_HOURS} == 6 ) then
+  if ( ${ASSIM_INT_HOURS} == "6" ) then
     #6 hours
     set START_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1} - 2 hours" "+%s"`
     set END_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1} + 3 hours" "+%s"`
-  elif ( ${ASSIM_INT_HOURS} == 1 ) then
+  else if ( ${ASSIM_INT_HOURS} == "1" ) then
     # 1 hour
     set START_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1}" "+%s"`
     set END_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1}" "+%s"`
