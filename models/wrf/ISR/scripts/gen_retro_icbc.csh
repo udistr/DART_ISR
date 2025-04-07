@@ -86,8 +86,10 @@ EOF
    set HH1 = `echo $datea | cut -c9-10`
    set DD2 = `echo $datefnl | cut -c1-8`
    set HH2 = `echo $datefnl | cut -c9-10`
-   cp ${SHELL_SCRIPTS_DIR}/get_era5_data.sh ${SHELL_SCRIPTS_DIR}/GetERA5-* ${SHELL_SCRIPTS_DIR}/Download_WRF_snap.sh .
-   bash get_era5_data.sh $DD1 $HH1 $DD2 $HH2
+   cp  ${SHELL_SCRIPTS_DIR}/GetERA5-* ${SHELL_SCRIPTS_DIR}/Download_WRF_snap.csh .
+   echo "Downloading ERA5 data"
+   ./Download_WRF_snap.csh $DD1 $HH1 $DD2 $HH2 ${paramfile} >& output.download_era5
+   echo "Finished downloading ERA5 data"
 
    cp ${WPS_SRC_DIR}/link_grib.csh .
    ./link_grib.csh ${ICBC_DIR}/${datea}/ERA5-*

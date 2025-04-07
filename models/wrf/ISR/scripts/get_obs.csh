@@ -44,12 +44,19 @@ else
   if ( ${HH1} == "00" ) then
     bash get_madis.sh $DATE
   endif
-  #6 hours
-  #set DATE1_m2 = `date -d "${YY1}${MM1}${DD1} ${HH1} - 2 hours" "+%Y %-m %-d %-H"`
-  #set DATE1_p3 = `date -d "${YY1}${MM1}${DD1} ${HH1} + 3 hours" "+%Y %-m %-d %-H"`
-  # 1 hour
-  set DATE1_m2 = `date -d "${YY1}${MM1}${DD1} ${HH1}" "+%Y %-m %-d %-H"`
-  set DATE1_p3 = `date -d "${YY1}${MM1}${DD1} ${HH1}" "+%Y %-m %-d %-H"`
+
+  if ( ${ASSIM_INT_HOURS} == 6 ) then
+    #6 hours
+    set DATE1_m2 = `date -d "${YY1}${MM1}${DD1} ${HH1} - 2 hours" "+%Y %-m %-d %-H"`
+    set DATE1_p3 = `date -d "${YY1}${MM1}${DD1} ${HH1} + 3 hours" "+%Y %-m %-d %-H"`
+  elif ( ${ASSIM_INT_HOURS} == 1 ) then
+    # 1 hour
+    set DATE1_m2 = `date -d "${YY1}${MM1}${DD1} ${HH1}" "+%Y %-m %-d %-H"`
+    set DATE1_p3 = `date -d "${YY1}${MM1}${DD1} ${HH1}" "+%Y %-m %-d %-H"`
+  else
+    echo "not yet implemented"
+    echo "update get obs.csh for implementation"
+  endif
 
   echo "Start converting MADIS data"
   ./convert_madis.csh ${DATE1_m2} ${DATE1_p3}
@@ -57,10 +64,19 @@ else
   source /shared/miniconda3/etc/profile.d/conda.csh
   conda activate xmitgcm
   # Get start and end times
-  #set START_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1} - 2 hours" "+%s"`
-  #set END_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1} + 3 hours" "+%s"`
-  set START_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1}" "+%s"`
-  set END_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1}" "+%s"`
+
+  if ( ${ASSIM_INT_HOURS} == 6 ) then
+    #6 hours
+    set START_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1} - 2 hours" "+%s"`
+    set END_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1} + 3 hours" "+%s"`
+  elif ( ${ASSIM_INT_HOURS} == 1 ) then
+    # 1 hour
+    set START_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1}" "+%s"`
+    set END_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1}" "+%s"`
+  else
+    echo "not yet implemented"
+    echo "update get obs.csh for implementation"
+  endif
 
   rm data_ims/*
 
