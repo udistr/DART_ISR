@@ -5,10 +5,7 @@ if ( $#argv > 0 ) then
   set datefnl   =  ${2} # target date   YYYYMMDDHH  # set this appropriately 
   set paramfile = `readlink -f ${3}` # Get absolute path for param.csh 
   setenv restore 1   # set the restore variable
-  echo 'starting a restore'
 else
-  echo "please enter a date: yyyymmddhh"
-  exit
   set dateinit  = 2020010800
   set datefnl   = 2020011000
   set paramfile = /shared/DART/ISR/scripts/param.csh

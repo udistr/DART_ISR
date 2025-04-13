@@ -16,7 +16,7 @@
 #  Set the assimilation parameters
 set NUM_ENS            = 30
 set ASSIM_INT_MINUTES  = 0   # 0 means use ASSIM_INT_HOURS
-set ASSIM_INT_HOURS    = 1   # ignored if ASSIM_INT_MINUTES > 0
+set ASSIM_INT_HOURS    = 6   # ignored if ASSIM_INT_MINUTES > 0
 set IC_PERT_SCALE      = 0.25
 set ADAPTIVE_INFLATION = 1   # set to 1 if using adaptive inflation to tell the scripts to look for the files
 set NUM_DOMAINS        = 1
@@ -40,6 +40,7 @@ set DART_DIR          = /shared/DART/DART                     # set this appropr
 set WRF_DM_SRC_DIR    = /shared/DART/WRFV4.6.1/WRF                    # set this appropriately #%%%#
 set WPS_SRC_DIR       = /shared/DART/WRFV4.6.1/WPS                      # set this appropriately #%%%#
 set VAR_SRC_DIR       = /shared/DART/WRFV4.6.1/WRFDA/WRFDA                    # set this appropriately #%%%#
+set IMS_DATA          = /shared/DART/IMS/data
 
 # for generating wrf template files
 set GEO_FILES_DIR     = /shared/WPS_GEOG            # set this appropriately #%%%#
@@ -91,7 +92,7 @@ else if ( $SUPER_PLATFORM == 'aws' ) then
    set FILTER_MPI_F       = 96
    set FILTER_PROCS_F     = 96
    set FILTER_TIME        = 0:35:00
-   set ADVANCE_TIME       = 1:00
+   set ADVANCE_TIME       = 2:00
 else
    # 'LSF' queueing system example
    # Set these appropriately for your LSF or Slurm system #%%%# 

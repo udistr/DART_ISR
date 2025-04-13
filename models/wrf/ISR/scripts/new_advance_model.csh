@@ -184,10 +184,10 @@ sleep 5
 # choose whether to run WRFDA perturbations or static perturbations from the bank
 ######################################################################################################
 set USE_WRFVAR_PERT = 0
-set USE_BANK_PERT = 1
+set USE_BANK_PERT = 0
 # choose which script to use to update bdy files: pert_wrf_bc or update_wrf_bc
 set USE_PERTS_WRF_BC = 0
-set USE_UPDATE_WRF_BC = 0
+set USE_UPDATE_WRF_BC = 1
 ######################################################################################################
 set state_copy = 1
 set ensemble_member_line = 1
@@ -201,8 +201,6 @@ while($state_copy <= $num_states)     # MULTIPLE DOMAINS - we don't expect advan
   set ensemble_member = `head -n $ensemble_member_line ${CENTRALDIR}/${control_file} | tail -n 1`
   set input_file      = `head -n $input_file_line      ${CENTRALDIR}/${control_file} | tail -n 1`
   set output_file     = `head -n $output_file_line     ${CENTRALDIR}/${control_file} | tail -n 1`
-  
-  set infl = 0.0
   
   #  create a new temp directory for each member unless requested to keep and it exists already
   set temp_dir = "advance_temp${ensemble_member}"
@@ -312,7 +310,7 @@ EOF
     
     @ dn ++  #
   end  
-  #  Move and remove unnecessary domains    MULTIPLE DOMAINS - this problably needs to be removed to avoid confusion
+  #  Move and remove unnecessary domains    MULTIPLE DOMAINS - this probably needs to be removed to avoid confusion
   if ( -e ${CENTRALDIR}/moving_domain_info ) then
   
     set REMOVE_STRING = `cat ${CENTRALDIR}/remove_domain_info`
@@ -466,7 +464,8 @@ EOF
     set END_MIN   = `echo $END_STRING | cut -c15-16`
     set END_SEC   = `echo $END_STRING | cut -c18-19`
 #      set datef = ${END_STRING[1]}${END_STRING[2]}${END_STRING[3]}${END_STRING[4]}
-    
+    echo ${START_STRING}
+    echo ${END_STRING}
     # Update boundary conditions.
     # WARNING: da_wrfvar.exe will only work correctly if running WRF V3.1 or later!
     # If it is found in the central dir, use it to regenerate perturbed boundary files
@@ -591,6 +590,8 @@ EOF
 
    # Update boundary conditions from existing wrfbdy files
     if ( $USE_UPDATE_WRF_BC ) then
+      #cp ../wrfinput_d01 wrfinput_mean
+      set infl = 0.0
       echo $infl | ${DART_DIR}/models/wrf/work/update_wrf_bc >&! out.update_wrf_bc
     
     endif
@@ -771,7 +772,7 @@ EOF
         @ dn ++
       end
 
-      cp wrfprcp_d*_* ${OUTPUT_DIR}/${datea}/
+      mv wrfprcp_d${dn}_${START_STRING}_${ensemble_member} ${OUTPUT_DIR}/${datea}/wrfprcp/wrfprcp_d${dn}_${START_STRING}_${ensemble_member}
       ${REMOVE} wrfout*
 
       set START_YEAR  = $END_YEAR

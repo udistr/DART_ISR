@@ -83,15 +83,20 @@ else
   # Loop through each hour (3600 seconds)
   set current = $START_TIME
   while ($current <= $END_TIME)
-      set YEAR = `date -d @$current "+%Y"`
-      set MONTH = `date -d @$current "+%m"`
-      set DAY = `date -d @$current "+%d"`
-      set HOUR = `date -d @$current "+%H"`
+    set YEAR = `date -d @$current "+%Y"`
+    set MONTH = `date -d @$current "+%m"`
+    set DAY = `date -d @$current "+%d"`
+    set HOUR = `date -d @$current "+%H"`
+    if (-e ${IMS_DATA}/ims_${YEAR}${MONTH}${DAY}${HOUR}.txt) then
+      echo "Data for $YEAR $MONTH $DAY $HOUR found in archive"
+      cp ${IMS_DATA}/ims_${YEAR}${MONTH}${DAY}${HOUR}.txt data_ims
+    else
       echo "get IMS data for $YEAR $MONTH $DAY $HOUR"
       ipython get_ims.py $YEAR $MONTH $DAY $HOUR
-      
-      # Move to next hour
-      @ current += 3600
+      cp data_ims/ims_$YEAR$MONTH$DAY$HOUR.txt ${IMS_DATA}
+    endif
+    # Move to next hour
+    @ current += 3600
   end
   conda deactivate
   cat data_ims/ims* > obs_seq_ims.txt

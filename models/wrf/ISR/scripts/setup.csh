@@ -104,6 +104,9 @@ foreach exe ( advance_time convert_madis_acars convert_madis_marine convert_madi
 end
 ${COPY} ${DART_DIR}/observations/obs_converters/text_ims/work/text_to_obs ${OBSPROC_DIR}
 
+#make archive ims observation data
+mkdir -p IMS_DATA
+
 echo "$myname complete at "`date`
 echo 
 

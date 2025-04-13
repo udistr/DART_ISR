@@ -126,7 +126,7 @@ while ( 1 == 1 )
             if ( $dn == 1 &&  -d ${RUN_DIR}/advance_temp${n} )  ${REMOVE} ${RUN_DIR}/advance_temp${n}
 
             mkdir -p ${RUN_DIR}/advance_temp${n}
-            ${LINK} ${OUTPUT_DIR}/${datea}/wrfinput_d${dchar}_${gdate[1]}_${gdate[2]}_mean \
+            ${COPY} ${OUTPUT_DIR}/${datea}/wrfinput_d${dchar}_${gdate[1]}_${gdate[2]}_mean \
                        ${RUN_DIR}/advance_temp${n}/wrfinput_d${dchar}
          else
             echo "${OUTPUT_DIR}/${datep}/PRIORS/prior_d${dchar}.${ensstring} is missing! Stopping the system"
@@ -155,35 +155,8 @@ while ( 1 == 1 )
       @ n++
    end  # loop through ensemble members
 
-   # If any of the queued jobs has not completed in 5 minutes, run them manually
-   # cleanup any failed stuffs
-   # NOTE : No automated cleanup for queued jobs. User may want to add system specific monitoring.
-   set dn = 1
-   while ( $dn <= $domains )
-      set dchar = `echo $dn + 100 | bc | cut -b2-3`
-      set n = 1
-      set loop = 1
-      while ( $n <= $NUM_ENS )
-         if (  -e    ${RUN_DIR}/ic_d${dchar}_${n}_ready) then
-            ${REMOVE} ${RUN_DIR}/ic_d${dchar}_${n}_ready
-            @ n++
-            set loop = 1
-         else
-            echo "waiting for ic member $n in domain $dn"
-            sleep 5
-            @ loop++
-            if ( $loop > 60 ) then    # wait 5 minutes for the ic file to be ready, else run manually
-               echo "gave up on ic member $n - redo"
-               ${SHELL_SCRIPTS_DIR}/prep_ic.csh ${n} ${datep} ${dn} ${paramfile}
-               # If manual execution of script, shouldn't queued job be killed?
-            endif
-         endif
-      end
-      @ dn++
-   end   # loop through domains
-
    mkdir -p ${OUTPUT_DIR}/${datea}/logs
-   #${MOVE}  icgen.o\* ${OUTPUT_DIR}/${datea}/logs/
+   mkdir -p ${OUTPUT_DIR}/${datea}/wrfprcp
 
    #  Get wrfinput source information
    ${COPY} ${OUTPUT_DIR}/${datea}/wrfinput_d01_${gdate[1]}_${gdate[2]}_mean wrfinput_d01
@@ -597,11 +570,12 @@ while ( 1 == 1 )
                else if ( $SUPER_PLATFORM == 'derecho' ) then
 
                   qsub assim_advance_mem${n}.csh
-                  sleep 5
+                  sleep 5Q
                else if ( $SUPER_PLATFORM == 'aws' ) then
                   # if the job is stuck kill it and resubmit
                   if ( `squeue -n assim_advance_${n} | wc -l` == 2 ) then
-                    set jobid = `squeue -n assim_advance_{n} | grep assim_ad | awk '{print $1}'`
+                    set jobid = `squeue -n assim_advance_${n} | grep assim_ad | awk '{print $1}'`
+                    echo "Job to calncel: ${jobid}"
                     scancel ${jobid}
                   endif
                   sbatch assim_advance_mem${n}.csh
@@ -664,7 +638,7 @@ while ( 1 == 1 )
    touch prev_cycle_done
    touch $RUN_DIR/cycle_finished_${datea}
    rm $RUN_DIR/cycle_started_${datea}
-  
+
    # If doing a reanalysis, increment the time if not done.  Otherwise, let the script exit
    if ( $restore == 1 ) then
      if ( $datea == $datefnl) then
