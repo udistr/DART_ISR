@@ -27,6 +27,12 @@ set paramfile = `readlink -f ${2}` # Get absolute path for param.csh from comman
 source $paramfile
          
 cd ${OBSPROC_DIR}
+mkdir -p data_ims
+mkdir -p data_madis
+
+cp ${SHELL_SCRIPTS_DIR}/convert_madis.csh .
+cp ${SHELL_SCRIPTS_DIR}/madis_conv.csh .
+cp ${TEMPLATE_DIR}/input.nml.template input.nml
 set DATE = $1
 
 mkdir -p ${OUTPUT_DIR}/${DATE}
@@ -42,7 +48,7 @@ else
   set HH1 = `echo $DATE | cut -c9-10`
 
   if ( ${HH1} == "00" ) then
-    bash get_madis.sh $DATE
+    ./get_madis.csh $DATE $paramfile
   endif
 
   if ( ${ASSIM_INT_HOURS} == 6 ) then
@@ -60,7 +66,6 @@ else
 
   echo "Start converting MADIS data"
   ./convert_madis.csh ${DATE1_m2} ${DATE1_p3}
-
   source /shared/miniconda3/etc/profile.d/conda.csh
   conda activate xmitgcm
   # Get start and end times
@@ -87,9 +92,9 @@ else
     set MONTH = `date -d @$current "+%m"`
     set DAY = `date -d @$current "+%d"`
     set HOUR = `date -d @$current "+%H"`
-    if (-e ${IMS_DATA}/ims_${YEAR}${MONTH}${DAY}${HOUR}.txt) then
+    if (-e ${IMS_DATA}/data/ims_${YEAR}${MONTH}${DAY}${HOUR}.txt) then
       echo "Data for $YEAR $MONTH $DAY $HOUR found in archive"
-      cp ${IMS_DATA}/ims_${YEAR}${MONTH}${DAY}${HOUR}.txt data_ims
+      cp ${IMS_DATA}/data/ims_${YEAR}${MONTH}${DAY}${HOUR}.txt data_ims
     else
       echo "get IMS data for $YEAR $MONTH $DAY $HOUR"
       ipython get_ims.py $YEAR $MONTH $DAY $HOUR
@@ -109,22 +114,22 @@ else
   set finished = 0
 
   while ($tries < $max_tries && $finished == 0)
-      ./text_to_obs > log.text_to_obs
-      @ tries = ${tries} + 1
-      
-      set finished_count = `grep Finished log.text_to_obs | wc -l`
-      if ($finished_count == 1) then
-          set finished = 1
-          echo "Success: Found 'Finished' in log file after $tries attempt(s)"
+    ./text_to_obs > log.text_to_obs
+    @ tries = ${tries} + 1
+    
+    set finished_count = `grep Finished log.text_to_obs | wc -l`
+    if ($finished_count == 1) then
+      set finished = 1
+      echo "Success: Found 'Finished' in log file after $tries attempt(s)"
+    else
+      echo "Attempt ${tries}: 'Finished' not found yet"
+      if ($tries < $max_tries) then
+        echo "Trying again..."
       else
-          echo "Attempt ${tries}: 'Finished' not found yet"
-          if ($tries < $max_tries) then
-              echo "Trying again..."
-          else
-              echo "Maximum number of attempts (${max_tries}) reached without finding 'Finished'"
-              exit 1
-          endif
+        echo "Maximum number of attempts (${max_tries}) reached without finding 'Finished'"
+        exit 1
       endif
+    endif
   end
 
   ${DART_DIR}/models/wrf/work/obs_sequence_tool

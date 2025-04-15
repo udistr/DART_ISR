@@ -65,6 +65,7 @@ while ( 1 == 1 )
    mkdir -p ${OUTPUT_DIR}/${datea}/logs
 
    cd ${ICBC_DIR}
+   echo "entering working folder ${ICBC_DIR}"
    ${LINK} ${RUN_DIR}/input.nml input.nml
    #${REMOVE} gfs*pgrb2* *grib2
 
@@ -98,11 +99,15 @@ EOF
    
    ${LINK} ${WPS_SRC_DIR}/ungrib/Variable_Tables/Vtable.${GRIB_SRC} Vtable
 
+   #echo "run geogrid in `pwd`"
+   #mkdir -p ${ICBC_DIR}/geogrid
+   #${LINK} ${WPS_SRC_DIR}/geogrid/GEOGRID.TBL ${ICBC_DIR}/geogrid/GEOGRID.TBL
+   #${WPS_SRC_DIR}/geogrid.exe >& output.geogrid.exe
+   #cp /shared/WRF4.4/WPS/geo_em.d01.nc .
+
    ${REMOVE}                    output.ungrib.exe.${GRIB_SRC}
    echo "runing ungrip"
    ${WPS_SRC_DIR}/ungrib.exe >& output.ungrib.exe.${GRIB_SRC}
-
-   cp /shared/WRF4.4/WPS/geo_em.d01.nc .
 
    ${REMOVE}                     output.metgrid.exe
    echo "runing metgrid"

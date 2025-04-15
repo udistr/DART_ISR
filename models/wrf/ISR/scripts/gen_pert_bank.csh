@@ -13,20 +13,21 @@
 # 	list of perturbed variables
 # 	wrfda executable and be.dat
 
-set datea = 2017042700  # need to start from a known valid date matching the wrfinput_d01 date
+set datea = 2020010800  # need to start from a known valid date matching the wrfinput_d01 date
+set BASE_DIR         = /shared/DART/ISR025
 
 # this has all wrf and wrfda executables and support files
-set wrfda_dir = /shared/DART/ISR/rundir/WRF_RUN # set this appropriately #%%%#
+set wrfda_dir = ${BASE_DIR}/rundir/WRF_RUN # set this appropriately #%%%#
 
-set work_dir  = /shared/DART/ISR/perts # set this appropriately #%%%#
+set work_dir  = ${BASE_DIR}/perts # set this appropriately #%%%#
 
-# put the final eperturbation files here for later use
-set save_dir  = /shared/DART/ISR/perts # set this appropriately #%%%#
+# put the final perturbation files here for later use
+set save_dir  = ${BASE_DIR}/perts # set this appropriately #%%%#
 
 set DART_DIR = /shared/DART/DART # set this appropriately #%%%#
 
 # where the template namelist is for wrfvar
-set template_dir =  /shared/DART/ISR/template     # set this appropriately #%%%#
+set template_dir =  ${BASE_DIR}/template     # set this appropriately #%%%#
 set IC_PERT_SCALE      = 0.009
 set IC_HORIZ_SCALE     = 0.8
 set IC_VERT_SCALE      = 0.8
@@ -53,10 +54,10 @@ set hh     = `echo $datea | cut -b9-10`
 set n = 1
 while ( $n <= $num_ens )
 
-   mkdir ${work_dir}/mem_${n}
+   mkdir -p ${work_dir}/mem_${n}
    cd ${work_dir}/mem_${n}
    cp ${wrfda_dir}/* ${work_dir}/mem_${n}/.
-   cp ${template_dir}/be.dat .
+   cp ${wrfda_dir}/be.dat .
    ln -sf ${wrfin_dir}/wrfinput_d01 ${work_dir}/mem_${n}/fg
    # prep the namelist to run wrfvar
    @ seed_array2 = $n * 10
@@ -99,7 +100,7 @@ while ( $n <= $num_ens )
 /seed_array1/c\seed_array1 = ${datea},
 /seed_array2/c\seed_array2 = $seed_array2,
 EOF
-   sed -f script.sed ${template_dir}/namelist.input.3dvar_gen_pert_bank >! ${work_dir}/mem_${n}/namelist.input
+   sed -f script.sed ${template_dir}/namelist.input.3dvar >! ${work_dir}/mem_${n}/namelist.input
    # make a run file for wrfvar
 
    cat >> ${work_dir}/mem_${n}/gen_pert_${n}.csh << EOF
@@ -118,7 +119,7 @@ EOF
 ##SBATCH --exclusive=no        # Don't request exclusive node access
 ##SBATCH --share              # Allow sharing the node with other jobs
 
-source /shared/miniconda3/etc/profile.d/conda.csh
+#source /shared/miniconda3/etc/profile.d/conda.csh
 
 cd ${work_dir}/mem_${n}
 
@@ -127,10 +128,9 @@ srun ./da_wrfvar.exe >& output.wrfvar
 mv wrfvar_output wrfinput_d01
 
 # extract only the fields that are updated by wrfvar, then diff to generate the pert file for this member
-conda activate gcc_env
-ncks -h -F -A -a -v U,V,T,QVAPOR,MU fg orig_data.nc
-ncks -h -F -A -a -v U,V,T,QVAPOR,MU wrfinput_d01 pert_data.nc
-ncdiff pert_data.nc orig_data.nc pert_bank_mem_${n}.nc
+/shared/miniconda3/envs/gcc_env/bin/ncks -h -F -A -a -v U,V,T,QVAPOR,MU fg orig_data.nc
+/shared/miniconda3/envs/gcc_env/bin/ncks -h -F -A -a -v U,V,T,QVAPOR,MU wrfinput_d01 pert_data.nc
+/shared/miniconda3/envs/gcc_env/bin/ncdiff pert_data.nc orig_data.nc pert_bank_mem_${n}.nc
 mv pert_bank_mem_${n}.nc ${save_dir}/pert_bank_mem_${n}.nc
 EOF
 

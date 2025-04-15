@@ -16,7 +16,7 @@ set paramfile = `readlink -f ${2}` # Get absolute path for param.csh from comman
 source $paramfile
 
 cd ${RUN_DIR}
-cp ${SHELL_SCRIPTS_DIR}/advance_time .
+cp ${OBSPROC_DIR}/advance_time .
 
 
 # KRF Generate the i/o lists in rundir automatically when initializing the ensemble
@@ -87,8 +87,8 @@ EOF
 #SBATCH --get-user-env
 #SBATCH --export=ALL
 #SBATCH -J first_advance_${n}
-#SBATCH --output=wrf.init."%j".out
-#SBATCH --error=wrf.init."%j".err
+#SBATCH --output=wrf.init_${n}.out
+#SBATCH --error=wrf.init_${n}.err
 #SBATCH --nodes=${FILTER_NODES}
 #SBATCH --ntasks-per-node=${FILTER_MPI}
 #SBATCH --cpus-per-task=${cpus_per_task}
@@ -120,33 +120,23 @@ EOF
 
 EOF
 
-   set id = `sbatch --parsable ${RUN_DIR}/rt_assim_init_${n}.csh`
-   set job_ids = ($job_ids $id)
+   sbatch --parsable ${RUN_DIR}/rt_assim_init_${n}.csh
    @ n++
 
 end
 
+set n = 1
 # Wait for all jobs to complete using squeue
-while (1)
-    set still_running = 0
-    
-    foreach id ($job_ids)
-        # Check if the job is still in the queue
-        set job_exists = `squeue -j $id -h | wc -l`
-        if ($job_exists > 0) then
-            set still_running = 1
-            #echo "Job $id is still running..."
-        endif
-    end
-    
-    if ($still_running == 0) then
-        echo "All jobs have completed!"
-        break
-    endif
-    
-    echo "Waiting for jobs to complete... sleeping for 30 seconds"
-    sleep 30
+while ( $n <= $NUM_ENS )
+    if ( `squeue -n first_advance_${n} | wc -l` == 1 ) then
+      echo "job ${n} is finished"
+      @ n++
+    else
+      echo "Waiting for jobs to complete... sleeping for 30 seconds"
+      sleep 30
+    endif 
 end
+echo "All jobs have completed!"
 
 mv wrf.init.* ${OUTPUT_DIR}/${initial_date}/logs/
 

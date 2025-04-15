@@ -40,7 +40,6 @@ set DART_DIR          = /shared/DART/DART                     # set this appropr
 set WRF_DM_SRC_DIR    = /shared/DART/WRFV4.6.1/WRF                    # set this appropriately #%%%#
 set WPS_SRC_DIR       = /shared/DART/WRFV4.6.1/WPS                      # set this appropriately #%%%#
 set VAR_SRC_DIR       = /shared/DART/WRFV4.6.1/WRFDA/WRFDA                    # set this appropriately #%%%#
-set IMS_DATA          = /shared/DART/IMS/data
 
 # for generating wrf template files
 set GEO_FILES_DIR     = /shared/WPS_GEOG            # set this appropriately #%%%#
@@ -105,6 +104,14 @@ else
    set FILTER_PTILE        = 16
    set ADVANCE_PTILE       = 16
 endif
+
+#  MADIS folders
+setenv MADIS_DATA /shared/DART/MADIS
+setenv MADIS_STATIC /shared/DART/MADIS/madisbin/static
+setenv MADIS_BIN /shared/DART/MADIS/madisbin/bin/
+
+#  IMS folders
+set IMS_DATA          = /shared/DART/IMS
 
 #  System specific commands
 setenv   REMOVE 'rm -rf'

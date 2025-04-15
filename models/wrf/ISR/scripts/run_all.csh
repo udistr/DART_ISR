@@ -8,7 +8,7 @@ if ( $#argv > 0 ) then
 else
   set dateinit  = 2020010800
   set datefnl   = 2020011000
-  set paramfile = /shared/DART/ISR/scripts/param.csh
+  set paramfile = `readlink -f param.csh`
 endif
 
 source $paramfile
@@ -26,11 +26,11 @@ set dateb  = `echo $datea $ASSIM_INT_HOURS | ${DART_DIR}/models/wrf/work/advance
 # generate first inflation - moved into init_ensemble_var.csh
 
 # MADIS data come on daily basis. At the beginning, download it
-# for the first day. If it is midnight, it will be downloaded 
-# in ./get_obs.csh
+# for the first day. If it is midnight, need to download the previous day.
 set HH1 = `echo ${dateinit} | cut -c9-10`
 if (${HH1} != "00") then
-  bash get_madis.sh ${dateinit}
+  set date0  = `echo $dateinit -24 | ${DART_DIR}/models/wrf/work/advance_time`
+  ./get_madis.sh ${date0} $paramfile
 endif
 
 ./get_obs.csh ${datea} ${paramfile}

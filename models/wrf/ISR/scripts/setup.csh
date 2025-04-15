@@ -103,9 +103,14 @@ foreach exe ( advance_time convert_madis_acars convert_madis_marine convert_madi
     endif
 end
 ${COPY} ${DART_DIR}/observations/obs_converters/text_ims/work/text_to_obs ${OBSPROC_DIR}
+cp ${SHELL_SCRIPTS_DIR}/get_madis.csh ${OBSPROC_DIR}
+
 
 #make archive ims observation data
-mkdir -p IMS_DATA
+mkdir -p ${IMS_DATA}/data
+cp ${IMS_DATA}/get_ims.py ${OBSPROC_DIR}/
+cp ${IMS_DATA}/record.py ${OBSPROC_DIR}/
+cp ${IMS_DATA}/meta data archive ims 1_2.xlsx ${OBSPROC_DIR}/
 
 echo "$myname complete at "`date`
 echo 
