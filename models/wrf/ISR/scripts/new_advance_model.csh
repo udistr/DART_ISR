@@ -223,7 +223,7 @@ while($state_copy <= $num_states)     # MULTIPLE DOMAINS - we don't expect advan
 #      ${COPY} ${CENTRALDIR}/wrfinput_d0? .
 #
 #   endif
-  cp ../wrfprcp_d01.txt .
+  cp ${TEMPLATE_DIR}/wrfprcp_d01.txt .
   
   # link WRF-runtime files (required) and be.dat (if using WRF-Var)
   ${LN} ${CENTRALDIR}/WRF_RUN/*       .
@@ -759,55 +759,55 @@ EOF
 # forecast date
     set dn = 1
     while ( $dn <= $num_domains )
+      mv wrfprcp_d0${dn}_${START_STRING} ${OUTPUT_DIR}/${datea}/wrfprcp/wrfprcp_d0${dn}_${START_STRING}_${ensemble_member}
       if ( $ensemble_member <= $save_ensemble_member ) ${COPY} wrfout_d0${dn}_${END_STRING} ${WRFOUTDIR}/wrfout_d0${dn}_${END_STRING}_${ensemble_member}
-# if the wrfinput file zip operation is finished, wrfinput_d0${dn}_$ensemble_member should no 
-# longer be in the directory
-        # test for this, and wait if the zip operation is not yet finished
-        while ( -e wrfinput_d0${dn}_${ensemble_member} )
-           sleep 3
-           touch ${CENTRALDIR}/HAD_TO_WAIT
-        end
-        ${MOVE} wrfinput_d0${dn}_${ensemble_member}.gz ../WRFIN/wrfinput_d0${dn}_${ensemble_member}.gz
-        ${MOVE} wrfout_d0${dn}_${END_STRING} wrfinput_d0${dn}
-        @ dn ++
+      # if the wrfinput file zip operation is finished, wrfinput_d0${dn}_$ensemble_member should no 
+      # longer be in the directory
+      # test for this, and wait if the zip operation is not yet finished
+      while ( -e wrfinput_d0${dn}_${ensemble_member} )
+         sleep 3
+         touch ${CENTRALDIR}/HAD_TO_WAIT
       end
+      ${MOVE} wrfinput_d0${dn}_${ensemble_member}.gz ../WRFIN/wrfinput_d0${dn}_${ensemble_member}.gz
+      ${MOVE} wrfout_d0${dn}_${END_STRING} wrfinput_d0${dn}
+      @ dn ++
+    end
 
-      mv wrfprcp_d${dn}_${START_STRING}_${ensemble_member} ${OUTPUT_DIR}/${datea}/wrfprcp/wrfprcp_d${dn}_${START_STRING}_${ensemble_member}
-      ${REMOVE} wrfout*
+    ${REMOVE} wrfout*
 
-      set START_YEAR  = $END_YEAR
-      set START_MONTH = $END_MONTH
-      set START_DAY   = $END_DAY
-      set START_HOUR  = $END_HOUR
-      set START_MIN   = $END_MIN
-      set START_SEC   = $END_SEC
-      set wrfkey      = $keys[$ifile]
-      @ ifile ++
+    set START_YEAR  = $END_YEAR
+    set START_MONTH = $END_MONTH
+    set START_DAY   = $END_DAY
+    set START_HOUR  = $END_HOUR
+    set START_MIN   = $END_MIN
+    set START_SEC   = $END_SEC
+    set wrfkey      = $keys[$ifile]
+    @ ifile ++
 
-   end
+  end # ( $wrfkey < $targkey )
 
-   ##############################################
-   # At this point, the target time is reached. #
-   ##############################################
-   # withdraw LSM data to use in next cycle   This is remnant from the Lanai days, we now pull soil state
-   # together with everything else
-   if ( -e ${CENTRALDIR}/fixed_domain_info )  set MY_NUM_DOMAINS = 1
-   if ( -e ${CENTRALDIR}/append_lsm_data ) then
-      set dn = 1
-      while ( $dn <= $num_domains )
+  ##############################################
+  # At this point, the target time is reached. #
+  ##############################################
+  # withdraw LSM data to use in next cycle This is remnant from the Lanai days, we now pull soil state
+  # together with everything else
+  if ( -e ${CENTRALDIR}/fixed_domain_info )  set MY_NUM_DOMAINS = 1
+  if ( -e ${CENTRALDIR}/append_lsm_data ) then
+    set dn = 1
+    while ( $dn <= $num_domains )
          /shared/miniconda3/envs/gcc_env/bin/ncks -h -F -A -a -v TSLB,SMOIS,SH2O,TSK wrfinput_d0${dn} lsm_data.nc
          /shared/miniconda3/envs/gcc_env/bin/ncrename -h -v TSLB,TSLB_d0${dn} -v SMOIS,SMOIS_d0${dn} -v SH2O,SH2O_d0${dn} -v TSK,TSK_d0${dn} \
                   -d west_east,west_east_d0${dn} -d south_north,south_north_d0${dn} \
                   -d soil_layers_stag,soil_layers_stag_d0${dn} lsm_data.nc
 	 @ dn ++
-      end
-      ${REMOVE} ${CENTRALDIR}/LSM/lsm_data_${ensemble_member}.nc
-      ${MOVE} lsm_data.nc ${CENTRALDIR}/LSM/lsm_data_${ensemble_member}.nc
-   endif
-   if ( -e ${CENTRALDIR}/fixed_domain_info || -e ${CENTRALDIR}/moving_domain_info ) then
-      ln -sf ${CENTRALDIR}/wrfinput_d01 wrfinput_d01_base
-      ${CENTRALDIR}/recalc_wrf_base >&! out.recalc_wrf_base
-   endif
+    end
+    ${REMOVE} ${CENTRALDIR}/LSM/lsm_data_${ensemble_member}.nc
+    ${MOVE} lsm_data.nc ${CENTRALDIR}/LSM/lsm_data_${ensemble_member}.nc
+  endif
+  if ( -e ${CENTRALDIR}/fixed_domain_info || -e ${CENTRALDIR}/moving_domain_info ) then
+    ln -sf ${CENTRALDIR}/wrfinput_d01 wrfinput_d01_base
+    ${CENTRALDIR}/recalc_wrf_base >&! out.recalc_wrf_base
+  endif
 #   extract the cycle variables
 #   # create new input to DART (taken from "wrfinput")
 #   ${CENTRALDIR}/wrf_to_dart >&! out.wrf_to_dart
@@ -835,51 +835,53 @@ EOF
 # MULTIPLE DOMAINS - loop through wrf files that are present
   set dn = 1
   while ( $dn <= $num_domains )
-     set dchar = `echo $dn + 100 | bc | cut -b2-3`
-     set icnum = `echo $ensemble_member + 10000 | bc | cut -b2-5`
-     set outfile =  prior_d${dchar}.${icnum}
-     echo "/shared/miniconda3/envs/gcc_env/bin/ncks -O -v ${extract_str_a} wrfinput_d${dchar} ../$outfile"
-     if ( $dn == 1 ) then
-       /shared/miniconda3/envs/gcc_env/bin/ncks -O -v ${extract_str_a} wrfinput_d${dchar} ../$outfile   # MULTIPLE DOMAINS - output file is incomplete filename?
-     else
-       /shared/miniconda3/envs/gcc_env/bin/ncks -O -v ${extract_str_b} wrfinput_d${dchar} ../$outfile   # MULTIPLE DOMAINS - output file is incomplete filename?
-     endif
+    set dchar = `echo $dn + 100 | bc | cut -b2-3`
+    set icnum = `echo $ensemble_member + 10000 | bc | cut -b2-5`
+    set outfile =  prior_d${dchar}.${icnum}
+    echo "/shared/miniconda3/envs/gcc_env/bin/ncks -O -v ${extract_str_a} wrfinput_d${dchar} ../$outfile"
+    if ( $dn == 1 ) then
+      /shared/miniconda3/envs/gcc_env/bin/ncks -O -v ${extract_str_a} wrfinput_d${dchar} ../$outfile   # MULTIPLE DOMAINS - output file is incomplete filename?
+    else
+      /shared/miniconda3/envs/gcc_env/bin/ncks -O -v ${extract_str_b} wrfinput_d${dchar} ../$outfile   # MULTIPLE DOMAINS - output file is incomplete filename?
+    endif
      @ dn ++
      echo "should have made $outfile"
   end
 # MULTIPLE DOMAINS - may need to remove below to avoid confusion
-   if ( -e ${CENTRALDIR}/moving_domain_info && $ensemble_member == 1 ) then
-      set dn = 2
-      while ( $dn <= $num_domains )
-         ${COPY} wrfinput_d0${dn} ${CENTRALDIR}/wrfinput_d0${dn}_new
-         @ dn ++
-      end
-   endif
+  if ( -e ${CENTRALDIR}/moving_domain_info && $ensemble_member == 1 ) then
+    set dn = 2
+    while ( $dn <= $num_domains )
+      ${COPY} wrfinput_d0${dn} ${CENTRALDIR}/wrfinput_d0${dn}_new
+      @ dn ++
+    end
+  endif
 
 
-   touch ${CENTRALDIR}/done_member_$ensemble_member
+  touch ${CENTRALDIR}/done_member_$ensemble_member
 
-   cd $CENTRALDIR
+  cd $CENTRALDIR
 
-   #  delete the temp directory for each member if desired
-   if ( $delete_temp_dir == true )  ${REMOVE} ${temp_dir}
-   echo "Ensemble Member $ensemble_member completed"
+  #  delete the temp directory for each member if desired
+  if ( $delete_temp_dir == true )  ${REMOVE} ${temp_dir}
+  echo "Ensemble Member $ensemble_member completed"
 
-   # and now repeat the entire process for any other ensemble member that
-   # needs to be advanced by this task.
-   # don't expect this to ever be run 
-   @ state_copy ++
-   @ ensemble_member_line += 3
-   @ input_file_line += 3
-   @ output_file_line += 3
+  # and now repeat the entire process for any other ensemble member that
+  # needs to be advanced by this task.
+  # don't expect this to ever be run 
+  @ state_copy ++
+  @ ensemble_member_line += 3
+  @ input_file_line += 3
+  @ output_file_line += 3
 
 end
 
 # Remove the filter_control file to signal completion
 # Is there a need for any sleeps to avoid trouble on completing moves here?
-      ${REMOVE} $control_file
-      if ($SUCCESS == 1) then
-         echo " done_member_$ensemble_member"
-      endif
+${REMOVE} $control_file
+if ($SUCCESS == 1) then
+  echo " done_member_$ensemble_member"
+endif
+
+
 exit 0
 
