@@ -69,7 +69,12 @@ orthonorm_gradient      = .true.
 eps                     = 0.01
 /
 &wrfvar7
-cv_options              = 7,
+cv_options = 3,
+as1     =  0.25,   1.00,   1.50,
+as2     =  0.25,   1.00,   1.50,
+as3     =  0.25,   1.00,   1.50,
+as4     =  0.25,   1.00,   1.50,
+as5     =  0.25,   1.00,   1.50,
 var_scaling1            = 1.0, 
 var_scaling2            = 1.0,  
 var_scaling3            = 1.0,  
@@ -180,6 +185,7 @@ end_hour                = 00,
 &fdda
 /
 &domains
+max_dom                 = 1
 e_we                    = 640,
 e_sn                    = 460,
 e_vert                  = 45,
