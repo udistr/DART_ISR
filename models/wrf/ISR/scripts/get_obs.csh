@@ -29,6 +29,7 @@ source $paramfile
 cd ${OBSPROC_DIR}
 mkdir -p data_ims
 mkdir -p data_madis
+mkdir -p ${OUTPUT_DIR}/OBS
 
 cp ${SHELL_SCRIPTS_DIR}/convert_madis.csh .
 cp ${SHELL_SCRIPTS_DIR}/madis_conv.csh .
@@ -37,8 +38,9 @@ set DATE = $1
 
 mkdir -p ${OUTPUT_DIR}/${DATE}
 
-if (-e ${OUTPUT_DIR}/${DATE}/obs_seq.out) then
+if (-e ${OUTPUT_DIR}/OBS/obs_seq.out_${DATE}) then
   echo "MADIS observation file for the current date exists, continue to filter"
+  cp ${OUTPUT_DIR}/OBS/obs_seq.out_${DATE} ${OUTPUT_DIR}/${DATE}/obs_seq.out
 else
   echo "MADIS observation file does not exist, getting data"
 
@@ -133,6 +135,9 @@ else
   end
 
   ${DART_DIR}/models/wrf/work/obs_sequence_tool
+  #save copy
+  cp obs_seq.out ${OUTPUT_DIR}/OBS/obs_seq.out_${DATE}
+  # move to output folder
   mv obs_seq.out ${OUTPUT_DIR}/${DATE}/
 
 endif

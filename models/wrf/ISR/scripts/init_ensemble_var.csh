@@ -54,6 +54,7 @@ set hh     = `echo $initial_date | cut -b9-10`
 ${COPY} ${TEMPLATE_DIR}/namelist.input.meso namelist.input
 ${REMOVE} ${RUN_DIR}/WRF
 ${LINK} ${OUTPUT_DIR}/${initial_date} WRF
+mkdir -p ${OUTPUT_DIR}/${initial_date}/wrfprcp
 set job_ids = ()
 set n = 1
 while ( $n <= $NUM_ENS )
@@ -138,9 +139,9 @@ while ( $n <= $NUM_ENS )
 end
 echo "All jobs have completed!"
 
-mv wrf.init.* ${OUTPUT_DIR}/${initial_date}/logs/
-
 cd $BASE_DIR/rundir
+
+mv wrf.init_* ${OUTPUT_DIR}/${initial_date}/logs/
 
 set gdate = (`echo $initial_date 0 -g | ${DART_DIR}/models/wrf/work/advance_time`)
 

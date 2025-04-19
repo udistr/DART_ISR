@@ -47,17 +47,17 @@ set GRIB_DATA_DIR     = ${ICBC_DIR}/grib_data                     # set this app
 set GRIB_SRC          = 'ERA-interim.pl'                                     # set this appropriately #%%%#
 
 # list of variables for extraction and cycling
-# select variables to wrfinput d01
+# select variables to extract from wrfout d01 at the end of the cycle (saved in the priors)
 set extract_vars_a   = ( U V P PB PH PHB THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
                          U10 V10 T2 Q2 PSFC TSLB SMOIS TSK RAINC RAINNC GRAUPELNC )
-# select variables to wrfinput d02 and above
+# select variables to extract from wrfout d02 and above at the end of the cycle (saved in the priors)
 set extract_vars_b   = ( U V W P PB PH PHB THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
                          U10 V10 T2 Q2 PSFC TSLB SMOIS TSK RAINC RAINNC GRAUPELNC \
                          REFL_10CM VT_DBZ_WT )
-# select variables from wrfinput
+# select variables from the priors to use in the initialization (saved in the priors and extracted for new wrf cycle)
 set cycle_vars_a     =   ( U V P PB PH PHB THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP \
                          U10 V10 T2 Q2 PSFC TSLB SMOIS TSK RAINC RAINNC GRAUPELNC )
-# select assimilated variables
+# select assimilated variables (variables for which posterior is calculated)
 set increment_vars_a = ( U V PH THM MU QVAPOR QCLOUD QRAIN QICE QSNOW QGRAUP U10 V10 T2 Q2 PSFC )
 
 #  Diagnostic parameters
