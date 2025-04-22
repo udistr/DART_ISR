@@ -110,7 +110,9 @@ setenv MADIS_DATA /shared/DART/MADIS
 setenv MADIS_STATIC /shared/DART/MADIS/madisbin/static
 setenv MADIS_BIN /shared/DART/MADIS/madisbin/bin/
 
-#  IMS folders
+# IMS folder
+# This folder contains download script with token that can't be shared
+# The folder also includes archived data
 set IMS_DATA          = /shared/DART/IMS
 
 #  System specific commands

@@ -100,7 +100,7 @@ else
     else
       echo "get IMS data for $YEAR $MONTH $DAY $HOUR"
       ipython get_ims.py $YEAR $MONTH $DAY $HOUR
-      cp data_ims/ims_$YEAR$MONTH$DAY$HOUR.txt ${IMS_DATA}
+      cp data_ims/ims_$YEAR$MONTH$DAY$HOUR.txt ${IMS_DATA}/data/
     endif
     # Move to next hour
     @ current += 3600
