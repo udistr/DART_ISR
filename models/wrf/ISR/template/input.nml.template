@@ -1,3 +1,9 @@
+&text_to_obs_nml
+   text_input_file = 'data_ims/obs_seq_ims.txt'
+   obs_out_file    = 'data_ims/obs_seq_ims'
+   debug           = .false.
+  /
+
 &probit_transform_nml
    /
         
@@ -186,6 +192,7 @@
     output_obs_def_mod_file = '../../../observations/forward_operators/obs_def_mod.f90'
     quantity_files          = '../../../assimilation_code/modules/observations/atmosphere_quantities_mod.f90'
     obs_type_files          = '../../../observations/forward_operators/obs_def_reanalysis_bufr_mod.f90',
+                              '../../../observations/forward_operators/obs_def_surface_mod.f90',
                               '../../../observations/forward_operators/obs_def_altimeter_mod.f90',
                               '../../../observations/forward_operators/obs_def_radar_mod.f90',
                               '../../../observations/forward_operators/obs_def_metar_mod.f90',
@@ -194,7 +201,6 @@
                               '../../../observations/forward_operators/obs_def_gps_mod.f90',
                               '../../../observations/forward_operators/obs_def_gts_mod.f90',
                               '../../../observations/forward_operators/obs_def_QuikSCAT_mod.f90',
-                              '../../../observations/forward_operators/obs_def_surface_mod.f90',
                               '../../../observations/forward_operators/obs_def_vortex_mod.f90'
    /
 
@@ -211,7 +217,6 @@
                                 'ACARS_DEWPOINT',
                                 'SAT_U_WIND_COMPONENT',
                                 'SAT_V_WIND_COMPONENT',
-                                'GPSRO_REFRACTIVITY',
 				'PROFILER_U_WIND_COMPONENT',
 				'PROFILER_V_WIND_COMPONENT',
                                 'METAR_U_10_METER_WIND',
@@ -224,11 +229,11 @@
                                 'MARINE_SFC_TEMPERATURE',
                                 'MARINE_SFC_ALTIMETER',
                                 'MARINE_SFC_DEWPOINT',
-    evaluate_these_obs_types = 'LAND_SFC_TEMPERATURE',
-                               'LAND_SFC_U_WIND_COMPONENT',
-                               'LAND_SFC_V_WIND_COMPONENT',
-                               'LAND_SFC_ALTIMETER',
-                               'LAND_SFC_DEWPOINT',
+                                'LAND_SFC_TEMPERATURE',
+                                'LAND_SFC_U_WIND_COMPONENT',
+                                'LAND_SFC_V_WIND_COMPONENT',
+                                'LAND_SFC_ALTIMETER',
+                                'LAND_SFC_DEWPOINT',
    /
 
 &obs_diag_nml
@@ -291,29 +296,16 @@
 &obs_def_gps_nml
    /
 
-&convert_gpsro_bufr_nml
-   gpsro_bufr_file     = 'nam.gpsro.bufr',
-   gpsro_bufr_filelist = '',
-   gpsro_out_file      = 'obs_seq.gpsro',
-   gpsro_aux_file      = 'convinfo.txt',
-   ray_htop            = 20000.0,
-   ray_hbot            =  3000.0
-   overwrite_obs_error = .false.,
-   convert_to_geopotential_height = .true.,
-   obs_window_hr       = 1.5,
-   debug = .false.
-   /
-
-&convert_cosmic_gps_nml
-   gpsro_netcdf_file     = '',
-   gpsro_netcdf_filelist = 'flist',
-   gpsro_out_file        = 'obs_seq.gpsro',
-   local_operator        = .true.,
-   obs_levels            = 0.22, 0.55, 1.1, 1.8, 2.7, 3.7, 4.9,
-                           6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0,
-   ray_ds                = 5000.0,
-   ray_htop              = 13000.1,
-   /
+&convert_madis_rawin_nml
+   do_significant_level_temps = .true.
+   do_significant_level_winds = .true.
+   wind_use_vert_pressure     = .true.
+   LH_err                     = .false.
+   include_specific_humidity  = .true.
+   include_relative_humidity  = .false.
+   include_dewpoint           = .false.
+   use_input_qc               = .true.
+ /
 
 &wrf_obs_preproc_nml
    obs_boundary             = 5.0,
@@ -338,25 +330,23 @@
    /  
 
 &obs_sequence_tool_nml
-   filename_seq         = 'obs_seq.out',
-   filename_seq_list    = 'obs_list',
-   filename_out         = 'obs_seq.final',
-   gregorian_cal        = .true.,
-   first_obs_days          = 153043,
-   first_obs_seconds       = 10800,
-   last_obs_days           = 153043,
-   last_obs_seconds        = 32400,
-   edit_copies          = .true.,
-   min_lat              = -90.0
-   max_lat              = 90.0
-   min_lon              = 0.0
-   max_lon              = 360.0
-   new_copy_index       = 1, 2, 3, 4, 5,
-   obs_types            = ''
-   keep_types           = .true.,
-   synonymous_copy_list = '',
-   synonymous_qc_list   = '',
-   /
+   filename_seq = 'data_madis/obs_seq_acars',
+                  'data_madis/obs_seq_marine',
+                  'data_madis/obs_seq_mesonet',
+                  'data_madis/obs_seq_metar',
+                  'data_madis/obs_seq_rawin',
+                  'data_madis/obs_seq_satwnd',
+                  'data_ims/obs_seq_ims'
+   filename_seq_list  = ''
+   synonymous_copy_list = 'MADIS observation', 'observation',
+   filename_out       = 'obs_seq.out'
+   print_only         = .false.
+   gregorian_cal      = .true.
+   min_lat            = 15.0
+   max_lat            = 50.0
+   min_lon            = 15.0
+   max_lon            = 55.0
+  /
 
 &wrf_dart_to_fields_nml
    include_slp             = .true.,
@@ -369,7 +359,6 @@
    pres_levels             = 70000.,
    /
 
-
 &schedule_nml
    calendar        = 'Gregorian',
    first_bin_start =  _FBS_YY_, _FBS_MM_, _FBS_DD_, _FBS_HH_, 0, 0,
@@ -379,15 +368,6 @@
    bin_interval_seconds = 21600,
    max_num_bins         = 1000,
    print_table          = .true.
-   /
-
-&obs_seq_to_netcdf_nml
-   obs_sequence_name = 'obs_seq.final'
-   obs_sequence_list     = '',
-   lonlim1    =   15.0,  
-   lonlim2    =   55.0,
-   latlim1    =   15.0,
-   latlim2    =   50.0,
    /
 
 &replace_wrf_fields_nml

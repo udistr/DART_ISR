@@ -31,6 +31,7 @@ mkdir -p data_ims
 mkdir -p data_madis
 mkdir -p ${OUTPUT_DIR}/OBS
 
+cp ${SHELL_SCRIPTS_DIR}/get_madis.csh .
 cp ${SHELL_SCRIPTS_DIR}/convert_madis.csh .
 cp ${SHELL_SCRIPTS_DIR}/madis_conv.csh .
 cp ${TEMPLATE_DIR}/input.nml.template input.nml
@@ -39,10 +40,14 @@ set DATE = $1
 mkdir -p ${OUTPUT_DIR}/${DATE}
 
 if (-e ${OUTPUT_DIR}/OBS/obs_seq.out_${DATE}) then
-  echo "MADIS observation file for the current date exists, continue to filter"
+  echo "obs_seq.out file for the current date exists, continue to filter"
   cp ${OUTPUT_DIR}/OBS/obs_seq.out_${DATE} ${OUTPUT_DIR}/${DATE}/obs_seq.out
 else
-  echo "MADIS observation file does not exist, getting data"
+  echo "obs_seq.out file does not exist, getting data"
+
+  ########################################################################
+  # MADIS data
+  ########################################################################
 
   set YY1 = `echo $DATE | cut -c1-4`
   set MM1 = `echo $DATE | cut -c5-6`
@@ -50,6 +55,10 @@ else
   set HH1 = `echo $DATE | cut -c9-10`
 
   if ( ${HH1} == "00" ) then
+    set DATE0  = `echo $DATE -24 | ${DART_DIR}/models/wrf/work/advance_time`
+    echo "checks if ${DATE0} files are available"
+    ./get_madis.csh $DATE0 $paramfile
+    echo "checks if ${DATE} files are available"
     ./get_madis.csh $DATE $paramfile
   endif
 
@@ -68,10 +77,14 @@ else
 
   echo "Start converting MADIS data"
   ./convert_madis.csh ${DATE1_m2} ${DATE1_p3}
+
+  ########################################################################
+  # IMS data
+  ########################################################################
+
   source /shared/miniconda3/etc/profile.d/conda.csh
   conda activate xmitgcm
   # Get start and end times
-
   if ( ${ASSIM_INT_HOURS} == "6" ) then
     #6 hours
     set START_TIME = `date -d "${YY1}${MM1}${DD1} ${HH1} - 2 hours" "+%s"`
@@ -95,12 +108,12 @@ else
     set DAY = `date -d @$current "+%d"`
     set HOUR = `date -d @$current "+%H"`
     if (-e ${IMS_DATA}/data/ims_${YEAR}${MONTH}${DAY}${HOUR}.txt) then
-      echo "Data for $YEAR $MONTH $DAY $HOUR found in archive"
+      echo "IMS data for $YEAR $MONTH $DAY $HOUR found in archive"
       cp ${IMS_DATA}/data/ims_${YEAR}${MONTH}${DAY}${HOUR}.txt data_ims
     else
       echo "get IMS data for $YEAR $MONTH $DAY $HOUR"
       ipython get_ims.py $YEAR $MONTH $DAY $HOUR
-      cp data_ims/ims_$YEAR$MONTH$DAY$HOUR.txt ${IMS_DATA}/data/
+      cp data_ims/ims_$YEAR$MONTH$DAY$HOUR.txt ${IMS_DATA}
     endif
     # Move to next hour
     @ current += 3600
@@ -133,6 +146,10 @@ else
       endif
     endif
   end
+
+  ########################################################################
+  # run obs_sequence_tool to combine data
+  ########################################################################
 
   ${DART_DIR}/models/wrf/work/obs_sequence_tool
   #save copy

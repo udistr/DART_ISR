@@ -5,7 +5,7 @@ if ( $#argv > 0 ) then
   set paramfile = `readlink -f ${3}` # Get absolute path for param.csh 
   setenv restore 1   # set the restore variable
 else
-  set dateinit  = 2020010800
+  set dateinit  = 2020010600
   set datefnl   = 2020011000
   set paramfile = `readlink -f param.csh`
 endif
@@ -23,8 +23,11 @@ while ( $datea <= $datefnl )
     ./get_obs.csh ${datea} ${paramfile}
     # Advance datea by ASSIM_INT_HOURS
     set datea = `echo $datea $ASSIM_INT_HOURS | ${DART_DIR}/models/wrf/work/advance_time`
+    echo "$datea"
 end
+
+rm input.nml
 
 echo "Processing completed from $dateinit to $datefnl"
 
-#nohup ./run_get_obs.csh 2020010800 2020011000 `readlink -f param.csh` > & output.log &
+#nohup ./run_get_obs.csh 2020010600 2020011000 param.csh > & run_get_obs.log &
