@@ -89,7 +89,7 @@ ${COPY} ${SHELL_SCRIPTS_DIR}/add_bank_perts.py    ${RUN_DIR} || exit 8
 ${COPY} ${SHELL_SCRIPTS_DIR}/new_advance_model.csh ${RUN_DIR} || exit 9
 
 # Edit input.nml.template so that its ens_size is set to the same value as $NUM_ENS in param.csh
-sed "s/ens_size.*/ens_size                 =  $NUM_ENS,/g" ${DART_DIR}/models/wrf/ISR/template/input.nml.template > ${RUN_DIR}/input.nml || exit 8
+sed "s/ens_size.*/ens_size                 =  $NUM_ENS,/g" ${TEMPLATE_DIR}/input.nml.template > ${RUN_DIR}/input.nml || exit 8
 
 # Put DART converters in proper place
 foreach exe ( advance_time convert_madis_acars convert_madis_marine convert_madis_mesonet \
